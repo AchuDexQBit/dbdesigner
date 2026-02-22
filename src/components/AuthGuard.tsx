@@ -8,7 +8,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     api.me()
       .then(() => setReady(true))
       .catch(() => {
-        window.location.href = getLoginUrl();
+        window.location.replace(getLoginUrl());
       });
   }, []);
 

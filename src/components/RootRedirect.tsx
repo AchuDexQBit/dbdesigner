@@ -11,7 +11,7 @@ export function RootRedirect() {
       .me()
       .then(() => navigate("/dashboard", { replace: true }))
       .catch(() => {
-        window.location.href = getLoginUrl();
+        window.location.replace(getLoginUrl());
       });
   }, [navigate]);
 

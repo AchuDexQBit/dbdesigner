@@ -5,7 +5,7 @@ const BASE =
   import.meta.env.VITE_BACKEND_URL ??
   "";
 
-/** URL for external login (e.g. tools.dexqbit.com). Used when unauthenticated or after sign out. */
+/** URL for external login. When the user is not authenticated, redirect here. Set VITE_LOGIN_URL in .env. */
 export function getLoginUrl(): string {
   return import.meta.env.VITE_LOGIN_URL ?? "https://tools.dexqbit.com";
 }
@@ -24,7 +24,7 @@ async function req<T>(
   });
 
   if (res.status === 401 && !options?.skip401Redirect) {
-    window.location.href = getLoginUrl();
+    window.location.replace(getLoginUrl());
     throw new Error("Not authenticated");
   }
 

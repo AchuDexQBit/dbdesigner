@@ -148,6 +148,8 @@ export default function Dashboard() {
     } catch {
       setUser(null);
       setDiagrams({ owned: [], shared: [] });
+      window.location.replace(getLoginUrl());
+      return;
     } finally {
       setLoading(false);
     }
