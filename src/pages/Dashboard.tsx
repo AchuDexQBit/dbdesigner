@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, Button, Tag, Spin } from "@douyinfe/semi-ui";
 import { IconUserAdd, IconDeleteStroked } from "@douyinfe/semi-icons";
-import { api } from "../api/client";
+import { api, getLoginUrl } from "../api/client";
 import CollaboratorModal from "../components/CollaboratorModal";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 
@@ -161,7 +161,7 @@ export default function Dashboard() {
     try {
       await api.logout();
     } finally {
-      navigate("/login", { replace: true });
+      window.location.href = getLoginUrl();
     }
   };
 

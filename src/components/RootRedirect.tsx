@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { api, getLoginUrl } from "../api/client";
 import { Spin } from "@douyinfe/semi-ui";
 
 export function RootRedirect() {
@@ -10,7 +10,9 @@ export function RootRedirect() {
     api
       .me()
       .then(() => navigate("/dashboard", { replace: true }))
-      .catch(() => navigate("/login", { replace: true }));
+      .catch(() => {
+        window.location.href = getLoginUrl();
+      });
   }, [navigate]);
 
   return (

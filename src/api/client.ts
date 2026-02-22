@@ -5,6 +5,11 @@ const BASE =
   import.meta.env.VITE_BACKEND_URL ??
   "";
 
+/** URL for external login (e.g. tools.dexqbit.com). Used when unauthenticated or after sign out. */
+export function getLoginUrl(): string {
+  return import.meta.env.VITE_LOGIN_URL ?? "https://tools.dexqbit.com";
+}
+
 async function req<T>(
   method: string,
   path: string,
@@ -19,7 +24,7 @@ async function req<T>(
   });
 
   if (res.status === 401 && !options?.skip401Redirect) {
-    window.location.href = "/login";
+    window.location.href = getLoginUrl();
     throw new Error("Not authenticated");
   }
 
@@ -32,9 +37,7 @@ async function req<T>(
 }
 
 export const api = {
-  // Auth
-  login: (email: string, password: string) =>
-    req("POST", "/auth/login", { email, password }),
+  // Auth (login handled by external app; cookies set there, then redirect to dbdesigner)
   logout: () => req("POST", "/auth/logout"),
   me: () => req("GET", "/auth/me"),
   changePassword: (currentPassword: string, newPassword: string) =>

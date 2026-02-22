@@ -3,7 +3,6 @@ import { useLayoutEffect } from "react";
 import Editor from "./pages/Editor";
 import BugReport from "./pages/BugReport";
 import Templates from "./pages/Templates";
-import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SettingsContextProvider from "./context/SettingsContext";
 import NotFound from "./pages/NotFound";
@@ -16,7 +15,6 @@ export default function App() {
         <RestoreScroll />
         <Routes>
           <Route path="/" element={<RootRedirect />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/editor/:id" element={<Editor />} />
           <Route path="/editor" element={<Editor />} />

@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { Modal, Form, Input, Button } from "@douyinfe/semi-ui";
-import { api } from "../api/client";
+import { api, getLoginUrl } from "../api/client";
 
 type Props = {
   isOpen: boolean;
@@ -9,7 +8,6 @@ type Props = {
 };
 
 export default function ChangePasswordModal({ isOpen, onClose }: Props) {
-  const navigate = useNavigate();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,7 +51,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
       setError(null);
       window.setTimeout(() => {
         handleClose();
-        navigate("/login", { replace: true });
+        window.location.href = getLoginUrl();
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
