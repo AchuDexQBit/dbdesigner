@@ -159,17 +159,20 @@ export default function CollaboratorModal({
       centered
       width={480}
       closable
+      getPopupContainer={() => document.querySelector(".dexqbit-theme") ?? document.body}
+      modalContentClass="dexqbit-theme"
+      bodyStyle={{ paddingBottom: 24 }}
     >
       {loading ? (
         <div className="flex justify-center py-8">
           <Spin />
         </div>
       ) : list.length === 0 ? (
-        <p className="text-[var(--semi-color-text-2)] text-sm py-4">
+        <p className="text-sm py-4" style={{ color: "var(--dexqbit-text-muted)" }}>
           No collaborators yet.
         </p>
       ) : (
-        <ul className="space-y-0 max-h-64 overflow-y-auto border-b border-[var(--semi-color-border)] pb-4 mb-4">
+        <ul className="space-y-0 max-h-64 overflow-y-auto border-b pb-4 mb-4" style={{ borderColor: "var(--dexqbit-border)" }}>
           {list.map((c) => {
             const uid = c.userId ?? c.id ?? "";
             const displayName = c.name ?? c.email ?? uid;
@@ -177,17 +180,18 @@ export default function CollaboratorModal({
             return (
               <li
                 key={uid}
-                className="flex items-center gap-3 py-3 border-b border-[var(--semi-color-border)] last:border-0"
+                className="flex items-center gap-3 py-3 border-b last:border-0"
+                style={{ borderColor: "var(--dexqbit-border)" }}
               >
                 <Avatar size="small" color="blue">
                   {initials}
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-[var(--semi-color-text-0)] truncate">
+                  <div className="font-medium truncate" style={{ color: "var(--dexqbit-text)" }}>
                     {displayName}
                   </div>
                   {c.email && c.name && (
-                    <div className="text-xs text-[var(--semi-color-text-2)] truncate">
+                    <div className="text-xs truncate" style={{ color: "var(--dexqbit-text-muted)" }}>
                       {c.email}
                     </div>
                   )}
@@ -259,7 +263,8 @@ export default function CollaboratorModal({
         </div>
         {addError && (
           <p
-            className="mt-2 text-sm text-[var(--semi-color-danger)]"
+            className="mt-2 text-sm"
+            style={{ color: "var(--semi-color-danger)" }}
             role="alert"
           >
             {addError}

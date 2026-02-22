@@ -332,3 +332,30 @@
 .dexqbit-theme .semi-spin-wrapper {
   color: var(--dexqbit-text);
 }
+
+/* Dexqbit theme – Modal (when getPopupContainer mounts inside .dexqbit-theme) */
+.dexqbit-theme .semi-modal-mask {
+  background: rgba(0, 0, 0, 0.65) !important;
+}
+.dexqbit-theme.semi-modal-content,
+.dexqbit-theme .semi-modal-content.dexqbit-theme {
+  background: var(--dexqbit-bg-elevated) !important;
+  border: 1px solid var(--dexqbit-border) !important;
+  border-radius: 16px !important;
+  color: var(--dexqbit-text) !important;
+}
+.dexqbit-theme .semi-modal-header,
+.semi-modal-content.dexqbit-theme .semi-modal-header {
+  color: var(--dexqbit-text) !important;
+  border-bottom-color: var(--dexqbit-border) !important;
+}
+.dexqbit-theme .semi-modal-body,
+.semi-modal-content.dexqbit-theme .semi-modal-body {
+  color: var(--dexqbit-text) !important;
+}
+.semi-modal-content.dexqbit-theme .semi-modal-close {
+  color: var(--dexqbit-text-muted) !important;
+}
+.semi-modal-content.dexqbit-theme .semi-modal-close:hover {
+  color: var(--dexqbit-text) !important;
+}

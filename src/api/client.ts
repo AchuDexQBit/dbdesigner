@@ -9,6 +9,7 @@ async function req<T>(
   method: string,
   path: string,
   body?: unknown,
+  options?: { skip401Redirect?: boolean },
 ): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -17,7 +18,7 @@ async function req<T>(
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (res.status === 401) {
+  if (res.status === 401 && !options?.skip401Redirect) {
     window.location.href = "/login";
     throw new Error("Not authenticated");
   }
@@ -36,6 +37,13 @@ export const api = {
     req("POST", "/auth/login", { email, password }),
   logout: () => req("POST", "/auth/logout"),
   me: () => req("GET", "/auth/me"),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    req(
+      "POST",
+      "/auth/change-password",
+      { currentPassword, newPassword },
+      { skip401Redirect: true },
+    ),
 
   // Diagrams
   listDiagrams: () => req("GET", "/diagrams"),

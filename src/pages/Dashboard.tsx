@@ -4,6 +4,7 @@ import { Card, Button, Tag, Spin } from "@douyinfe/semi-ui";
 import { IconUserAdd, IconDeleteStroked } from "@douyinfe/semi-icons";
 import { api } from "../api/client";
 import CollaboratorModal from "../components/CollaboratorModal";
+import ChangePasswordModal from "../components/ChangePasswordModal";
 
 type User = { name?: string; email?: string };
 type Diagram = {
@@ -131,6 +132,7 @@ export default function Dashboard() {
   const [diagrams, setDiagrams] = useState<DiagramsData>({ owned: [], shared: [] });
   const [loading, setLoading] = useState(true);
   const [shareModal, setShareModal] = useState<Diagram | null>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -212,11 +214,14 @@ export default function Dashboard() {
         </Link>
         <div className="flex items-center gap-3">
           <span
-            className="text-sm"
-            style={{ color: "var(--dexqbit-text-muted)" }}
+            className="font-bold text-lg"
+            style={{ color: "var(--dexqbit-text)" }}
           >
             Hi, {user?.name ?? user?.email ?? "User"}
           </span>
+          <Button theme="borderless" onClick={() => setChangePasswordOpen(true)}>
+            Change Password
+          </Button>
           <Button theme="borderless" onClick={handleSignOut}>
             Sign out
           </Button>
@@ -314,6 +319,10 @@ export default function Dashboard() {
           onClose={() => setShareModal(null)}
         />
       )}
+      <ChangePasswordModal
+        isOpen={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </div>
   );
 }
