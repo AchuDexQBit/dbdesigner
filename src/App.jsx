@@ -3,9 +3,11 @@ import { useLayoutEffect } from "react";
 import Editor from "./pages/Editor";
 import BugReport from "./pages/BugReport";
 import Templates from "./pages/Templates";
-import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import SettingsContextProvider from "./context/SettingsContext";
 import NotFound from "./pages/NotFound";
+import { RootRedirect } from "./components/RootRedirect";
 
 export default function App() {
   return (
@@ -13,7 +15,10 @@ export default function App() {
       <BrowserRouter>
         <RestoreScroll />
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/editor/:id" element={<Editor />} />
           <Route path="/editor" element={<Editor />} />
           <Route path="/bug-report" element={<BugReport />} />
           <Route path="/templates" element={<Templates />} />

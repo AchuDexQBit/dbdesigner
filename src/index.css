@@ -231,3 +231,104 @@
   stroke-dasharray: 12 8;
   animation: dash-right 1s linear infinite;
 }
+
+/* Dexqbit theme – dexqbit.com inspired (dark indigo, pill buttons, clean sans) */
+.dexqbit-theme {
+  --dexqbit-bg: #0f0a1a;
+  --dexqbit-bg-elevated: #1a0a2e;
+  --dexqbit-bg-card: rgba(255, 255, 255, 0.06);
+  --dexqbit-text: #ffffff;
+  --dexqbit-text-muted: rgba(255, 255, 255, 0.72);
+  --dexqbit-border: rgba(255, 255, 255, 0.24);
+  --dexqbit-accent: #8b5cf6;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--dexqbit-text);
+  background-color: var(--dexqbit-bg);
+}
+
+.dexqbit-theme .semi-button {
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.dexqbit-theme .semi-button.semi-button-primary,
+.dexqbit-theme .semi-button.semi-button-solid {
+  background: var(--dexqbit-accent) !important;
+  border: 1.5px solid var(--dexqbit-accent) !important;
+  color: #ffffff !important;
+  border-radius: 9999px !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 10px 20px !important;
+  box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+}
+.dexqbit-theme .semi-button.semi-button-primary:hover,
+.dexqbit-theme .semi-button.semi-button-solid:hover {
+  background: #9d7af7 !important;
+  border-color: #9d7af7 !important;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.dexqbit-theme .semi-button.semi-button-light {
+  background: var(--dexqbit-bg-card) !important;
+  border: 1px solid var(--dexqbit-border) !important;
+  color: var(--dexqbit-text) !important;
+  border-radius: 9999px !important;
+}
+.dexqbit-theme .semi-button.semi-button-light:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dexqbit-theme .semi-button.semi-button-borderless {
+  color: var(--dexqbit-text-muted) !important;
+  border: 1.5px solid transparent !important;
+  border-radius: 9999px !important;
+  padding: 8px 16px !important;
+  font-weight: 500;
+}
+.dexqbit-theme .semi-button.semi-button-borderless:hover {
+  color: var(--dexqbit-text) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--dexqbit-border) !important;
+}
+
+.dexqbit-theme .semi-button-type-danger.semi-button-borderless {
+  color: #fca5a5 !important;
+}
+.dexqbit-theme .semi-button-type-danger.semi-button-borderless:hover {
+  color: #f87171 !important;
+}
+
+.dexqbit-theme .semi-input-wrapper,
+.dexqbit-theme .semi-input {
+  background: var(--dexqbit-bg-card) !important;
+  border: 1px solid var(--dexqbit-border) !important;
+  border-radius: 12px !important;
+  color: var(--dexqbit-text) !important;
+}
+.dexqbit-theme .semi-input-wrapper:hover,
+.dexqbit-theme .semi-input:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+.dexqbit-theme .semi-input::placeholder {
+  color: var(--dexqbit-text-muted);
+}
+.dexqbit-theme .semi-form-field-label {
+  color: var(--dexqbit-text-muted) !important;
+}
+
+.dexqbit-theme .semi-card {
+  background: var(--dexqbit-bg-card) !important;
+  border: 1px solid var(--dexqbit-border) !important;
+  border-radius: 16px !important;
+}
+
+.dexqbit-theme .semi-tag {
+  background: rgba(139, 92, 246, 0.2) !important;
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  color: #c4b5fd !important;
+}
+
+.dexqbit-theme .semi-spin-wrapper {
+  color: var(--dexqbit-text);
+}

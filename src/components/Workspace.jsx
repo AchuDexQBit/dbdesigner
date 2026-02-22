@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext } from "react";
+import { useState, useEffect, useCallback, createContext, useRef } from "react";
 import ControlPanel from "./EditorHeader/ControlPanel";
 import Canvas from "./EditorCanvas/Canvas";
 import { CanvasContextProvider } from "../context/CanvasContext";
@@ -18,14 +18,15 @@ import {
   useEnums,
 } from "../hooks";
 import FloatingControls from "./FloatingControls";
-import { Button, Modal, Tag } from "@douyinfe/semi-ui";
+import { Button, Modal, Tag, Toast } from "@douyinfe/semi-ui";
 import { IconAlertTriangle } from "@douyinfe/semi-icons";
 import { useTranslation } from "react-i18next";
 import { databases } from "../data/databases";
 import { isRtl } from "../i18n/utils/rtl";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { get, SHARE_FILENAME } from "../api/gists";
 import { nanoid } from "nanoid";
+import { api } from "../api/client";
 
 export const IdContext = createContext({
   gistId: "",
@@ -66,14 +67,57 @@ export default function WorkSpace() {
   } = useDiagram();
   const { undoStack, redoStack, setUndoStack, setRedoStack } = useUndoRedo();
   const { t, i18n } = useTranslation();
+  const { id: urlId } = useParams();
   let [searchParams, setSearchParams] = useSearchParams();
+  const saveDebounceRef = useRef(null);
+
   const handleResize = (e) => {
     if (!resize) return;
     const w = isRtl(i18n.language) ? window.innerWidth - e.clientX : e.clientX;
     if (w > SIDEPANEL_MIN_WIDTH) setWidth(w);
   };
 
+  const buildDiagramData = useCallback(() => {
+    return {
+      database,
+      name: title,
+      tables,
+      references: relationships,
+      notes,
+      areas,
+      pan: transform.pan,
+      zoom: transform.zoom,
+      ...(databases[database]?.hasEnums && { enums }),
+      ...(databases[database]?.hasTypes && { types }),
+    };
+  }, [
+    database,
+    title,
+    tables,
+    relationships,
+    notes,
+    areas,
+    transform.pan,
+    transform.zoom,
+    enums,
+    types,
+  ]);
+
   const save = useCallback(async () => {
+    if (urlId) {
+      setSaveState(State.SAVING);
+      try {
+        await api.saveDiagram(urlId, title, buildDiagramData());
+        setSaveState(State.SAVED);
+        setLastSaved(new Date().toLocaleString());
+      } catch (err) {
+        setSaveState(State.ERROR);
+        const message = err instanceof Error ? err.message : "Failed to save diagram";
+        Toast.error(message);
+      }
+      return;
+    }
+
     const name = window.name.split(" ");
     const op = name[0];
     const saveAsDiagram = window.name === "" || op === "d" || op === "lt";
@@ -151,6 +195,11 @@ export default function WorkSpace() {
         });
     }
   }, [
+    urlId,
+    title,
+    buildDiagramData,
+    setSaveState,
+    setLastSaved,
     searchParams,
     setSearchParams,
     tables,
@@ -158,10 +207,8 @@ export default function WorkSpace() {
     notes,
     areas,
     types,
-    title,
     id,
     transform,
-    setSaveState,
     database,
     enums,
     gistId,
@@ -169,6 +216,62 @@ export default function WorkSpace() {
   ]);
 
   const load = useCallback(async () => {
+    if (urlId) {
+      setSaveState(State.LOADING);
+      try {
+        const res = await api.getDiagram(urlId);
+        const diagram = res?.data ?? res;
+        const diagramName = res?.name ?? diagram?.name ?? "Untitled Diagram";
+        const dbName = diagram?.database ?? DB.GENERIC;
+        setDatabase(diagram?.database ? diagram.database : DB.GENERIC);
+        setGistId(diagram?.gistId ?? "");
+        setLoadedFromGistId(diagram?.loadedFromGistId ?? "");
+        setTitle(diagramName);
+        setTables(diagram?.tables ?? []);
+        setRelationships(diagram?.references ?? diagram?.relationships ?? []);
+        setNotes(diagram?.notes ?? []);
+        setAreas(diagram?.areas ?? diagram?.subjectAreas ?? []);
+        setTransform({
+          pan: diagram?.pan ?? { x: 0, y: 0 },
+          zoom: diagram?.zoom ?? 1,
+        });
+        setUndoStack([]);
+        setRedoStack([]);
+        if (databases[dbName]?.hasTypes) {
+          if (diagram?.types?.length) {
+            setTypes(
+              diagram.types.map((t) =>
+                t.id
+                  ? t
+                  : {
+                      ...t,
+                      id: nanoid(),
+                      fields: (t.fields ?? []).map((f) =>
+                        f.id ? f : { ...f, id: nanoid() },
+                      ),
+                    },
+              ),
+            );
+          } else {
+            setTypes([]);
+          }
+        }
+        if (databases[dbName]?.hasEnums) {
+          setEnums(
+            (diagram?.enums ?? []).map((e) =>
+              !e.id ? { ...e, id: nanoid() } : e,
+            ),
+          );
+        }
+        setSaveState(State.SAVED);
+        setLastSaved(new Date().toLocaleString());
+        window.name = `d ${urlId}`;
+      } catch {
+        setSaveState(State.FAILED_TO_LOAD);
+      }
+      return;
+    }
+
     const loadLatestDiagram = async () => {
       await db.diagrams
         .orderBy("lastModified")
@@ -427,6 +530,7 @@ export default function WorkSpace() {
       }
     }
   }, [
+    urlId,
     setTransform,
     setRedoStack,
     setUndoStack,
@@ -458,10 +562,13 @@ export default function WorkSpace() {
     )
       return;
 
+    if (urlId) return;
+
     if (settings.autosave) {
       setSaveState(State.SAVING);
     }
   }, [
+    urlId,
     undoStack,
     redoStack,
     settings.autosave,
@@ -474,6 +581,37 @@ export default function WorkSpace() {
     title,
     gistId,
     setSaveState,
+  ]);
+
+  useEffect(() => {
+    if (!urlId) return;
+    if (layout.readOnly) return;
+
+    const delay = 1500;
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      saveDebounceRef.current = null;
+      save();
+    }, delay);
+    return () => {
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current);
+        saveDebounceRef.current = null;
+      }
+    };
+  }, [
+    urlId,
+    layout.readOnly,
+    tables,
+    relationships,
+    notes,
+    areas,
+    transform,
+    title,
+    database,
+    types,
+    enums,
+    save,
   ]);
 
   useEffect(() => {

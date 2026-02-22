@@ -7,7 +7,7 @@ const defaultSettings = {
   showGrid: true,
   snapToGrid: false,
   showDataTypes: true,
-  mode: "light",
+  mode: "dark",
   autosave: true,
   showCardinality: true,
   showRelationshipLabels: true,

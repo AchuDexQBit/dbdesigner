@@ -9,10 +9,8 @@ import {
   IconUndo,
   IconRedo,
   IconEdit,
-  IconShareStroked,
 } from "@douyinfe/semi-icons";
 import { Link, useNavigate } from "react-router-dom";
-import icon from "../../assets/icon_dark_64.png";
 import {
   Button,
   Divider,
@@ -129,7 +127,7 @@ export default function ControlPanel({
   const { selectedElement, setSelectedElement } = useSelect();
   const { transform, setTransform } = useTransform();
   const { t, i18n } = useTranslation();
-  const { version, gistId, setGistId } = useContext(IdContext);
+  const { gistId, setGistId } = useContext(IdContext);
   const navigate = useNavigate();
 
   const invertLayout = (component) =>
@@ -1504,19 +1502,6 @@ export default function ControlPanel({
             showDebugCoordinates: !prev.showDebugCoordinates,
           })),
       },
-      theme: {
-        children: [
-          {
-            name: t("light"),
-            function: () => setSettings((prev) => ({ ...prev, mode: "light" })),
-          },
-          {
-            name: t("dark"),
-            function: () => setSettings((prev) => ({ ...prev, mode: "dark" })),
-          },
-        ],
-        function: () => {},
-      },
       zoom_in: {
         function: zoomIn,
         shortcut: "Ctrl+(Up/Wheel)",
@@ -1638,17 +1623,6 @@ export default function ControlPanel({
             style={isRtl(i18n.language) ? { direction: "rtl" } : {}}
           >
             {header()}
-            {window.name.split(" ")[0] !== "t" && (
-              <Button
-                type="primary"
-                className="!text-base me-2 !pe-6 !ps-5 !py-[18px] !rounded-md"
-                size="default"
-                icon={<IconShareStroked />}
-                onClick={() => setModal(MODAL.SHARE)}
-              >
-                {t("share")}
-              </Button>
-            )}
           </div>
         )}
         {layout.toolbar && toolbar()}
@@ -1813,32 +1787,6 @@ export default function ControlPanel({
             </button>
           </Tooltip>
           <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("versions")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm text-xl -mt-0.5"
-              onClick={() => setSidesheet(SIDESHEET.VERSIONS)}
-            >
-              <i className="fa-solid fa-code-branch" />
-            </button>
-          </Tooltip>
-          <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("theme")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm text-xl -mt-0.5"
-              onClick={() => {
-                const body = document.body;
-                if (body.hasAttribute("theme-mode")) {
-                  if (body.getAttribute("theme-mode") === "light") {
-                    menu["view"]["theme"].children[1].function();
-                  } else {
-                    menu["view"]["theme"].children[0].function();
-                  }
-                }
-              }}
-            >
-              <i className="fa-solid fa-circle-half-stroke" />
-            </button>
-          </Tooltip>
         </div>
         <button
           onClick={() => invertLayout("header")}
@@ -1857,11 +1805,11 @@ export default function ControlPanel({
       case State.LOADING:
         return t("loading");
       case State.SAVED:
-        return `${t("last_saved")} ${lastSaved}`;
+        return "Saved ✓";
       case State.SAVING:
-        return t("saving");
+        return "Saving...";
       case State.ERROR:
-        return t("failed_to_save");
+        return "Error saving";
       case State.FAILED_TO_LOAD:
         return t("failed_to_load");
       default:
@@ -1876,12 +1824,12 @@ export default function ControlPanel({
         style={isRtl(i18n.language) ? { direction: "rtl" } : {}}
       >
         <div className="flex justify-start items-center">
-          <Link to="/">
+          <Link to="/dashboard">
             <img
-              width={54}
-              src={icon}
-              alt="logo"
-              className="ms-7 min-w-[54px]"
+              src="/logo.png"
+              alt="DexQBit"
+              width={32}
+              className="ms-7 h-8 w-auto object-contain"
             />
           </Link>
           <div className="ms-1 mt-1">
@@ -1912,13 +1860,8 @@ export default function ControlPanel({
                 <span>
                   {(window.name.split(" ")[0] === "t"
                     ? "Templates/"
-                    : "Diagrams/") + title}
+                    : "") + title}
                 </span>
-                {version && (
-                  <Tag className="mt-1" color="blue" size="small">
-                    {version.substring(0, 7)}
-                  </Tag>
-                )}
               </div>
               {(showEditName || modal === MODAL.RENAME) && !layout.readOnly && (
                 <IconEdit />
