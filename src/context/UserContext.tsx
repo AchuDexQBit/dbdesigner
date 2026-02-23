@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 
-// ─── Types ─────────────────────────────────────────────────────────────────
+// ─── Types (match AuthUser from tools project) ─────────────────────────────
 
 export interface User {
   id: string;
   email: string;
   name: string;
+  greet_name: string;
+  active: boolean;
+  designation: string;
+  created_at: string;
 }
 
 export interface UserContextValue {

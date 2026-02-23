@@ -2,16 +2,13 @@ import React from "react";
 import { useUser } from "../context/UserContext";
 import { api } from "../api/client";
 
-// Match tools-FE app/dashboard/page.tsx and app/components/LogoutButton.tsx
-const BAR_BG = "#12111a";
+// Match tools dashboard: border-white/10, purple accent #7c3aed for title, avatar #9A70DD, divider #4A2E70/80
 const BAR_BORDER = "rgba(255,255,255,0.1)";
 const TEXT_WHITE = "#ffffff";
-const PURPLE = "#9A70DD"; // tools top bar avatar/accent
+const TITLE_PURPLE = "#7c3aed";
+const PURPLE = "#9A70DD";
 const PURPLE_BORDER = "rgba(154,112,221,0.3)";
 const SEPARATOR = "rgba(74,46,112,0.8)";
-const LOGOUT_TEXT = "#94a3b8";
-const LOGOUT_HOVER_BG = "rgba(255,255,255,0.05)";
-const LOGOUT_HOVER_TEXT = "#b3b3b3";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -21,19 +18,9 @@ function getInitials(name: string): string {
   return name.trim().slice(0, 2).toUpperCase() || "?";
 }
 
-function LogoutIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
-
 function getLoginRedirectUrl(): string {
-  const base = import.meta.env.VITE_TOOLS_URL ?? "";
-  return base ? `${base.replace(/\/$/, "")}` : "";
+  const base = (import.meta.env.VITE_TOOLS_URL ?? "").replace(/\/$/, "");
+  return base ? `${base}/login` : "/login";
 }
 
 export default function TopBar() {
@@ -43,6 +30,7 @@ export default function TopBar() {
 
   const displayName = user.name?.trim() || user.email || "User";
   const initials = getInitials(displayName);
+  const designation = user.designation?.trim() ?? "";
 
   const handleLogout = async () => {
     try {
@@ -55,34 +43,31 @@ export default function TopBar() {
 
   return (
     <header
+      className="topbar-header"
       style={{
         width: "100%",
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        background: BAR_BG,
         borderBottom: `1px solid ${BAR_BORDER}`,
-        padding: "16px 0",
+        paddingTop: 16,
+        paddingBottom: 16,
         boxSizing: "border-box",
         fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
       }}
-      className="topbar-header"
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "1.2rem",
-            fontWeight: 400,
-            color: PURPLE,
-            fontFamily: "'Audiowide', system-ui, sans-serif",
-          }}
-          className="topbar-title-responsive"
-        >
-          DB Designer
-        </p>
-      </div>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 22,
+          fontWeight: 400,
+          color: TITLE_PURPLE,
+          fontFamily: "'Audiowide', system-ui, sans-serif",
+        }}
+      >
+        DexQBit DB Designer
+      </p>
 
       <div
         style={{
@@ -102,6 +87,17 @@ export default function TopBar() {
           >
             {displayName}
           </p>
+          {designation ? (
+            <p
+              style={{
+                margin: "2px 0 0 0",
+                fontSize: 14,
+                color: PURPLE,
+              }}
+            >
+              {designation}
+            </p>
+          ) : null}
         </div>
         <div
           style={{
@@ -122,37 +118,6 @@ export default function TopBar() {
         >
           {initials}
         </div>
-        <div
-          style={{
-            width: 1,
-            height: 32,
-            background: SEPARATOR,
-            flexShrink: 0,
-          }}
-          aria-hidden
-        />
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "6px 8px",
-            borderRadius: 6,
-            border: "none",
-            background: "none",
-            color: LOGOUT_TEXT,
-            fontSize: 14,
-            fontWeight: 400,
-            cursor: "pointer",
-          }}
-          className="topbar-logout-btn"
-          aria-label="Log out"
-        >
-          <LogoutIcon />
-          <span>Logout</span>
-        </button>
       </div>
     </header>
   );

@@ -10,7 +10,6 @@ import TopBar from "../components/TopBar";
 
 type DiagramsData = { owned: Diagram[]; shared: SharedDiagram[] };
 
-const PAGE_BG = "#0a0a0f";
 const TEXT_WHITE = "#ffffff";
 const TEXT_MUTED = "#6b7280";
 const PURPLE = "#7c3aed";
@@ -40,6 +39,10 @@ export default function Dashboard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    console.log("[Dashboard] cookies:", document.cookie);
+  }, []);
 
   const handleCreateDiagram = () => {
     const name = window.prompt("Diagram name", "Untitled Diagram");
@@ -74,8 +77,8 @@ export default function Dashboard() {
 
   return (
     <div
+      className="dashboard-page"
       style={{
-        background: PAGE_BG,
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
@@ -83,7 +86,7 @@ export default function Dashboard() {
       }}
     >
       <TopBar />
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: 32, width: "100%", boxSizing: "border-box" }}>
+      <main style={{ maxWidth: 960, margin: "0 auto", padding: 32, width: "100%", boxSizing: "border-box", position: "relative", zIndex: 1 }}>
         {/* Section 1 — My Diagrams */}
         <section style={{ marginBottom: 40 }}>
           <div
@@ -128,7 +131,7 @@ export default function Dashboard() {
                 background: PURPLE,
                 borderColor: PURPLE,
                 borderRadius: 8,
-                padding: "10px 20px",
+                padding: "20px 24px",
                 fontSize: 14,
                 fontWeight: 500,
                 flexShrink: 0,

@@ -1,11 +1,15 @@
 /// <reference types="vite/client" />
 
-// ─── Types (exported for consumers) ───────────────────────────────────────
+// ─── Types (exported for consumers; User matches AuthUser from tools) ───────
 
 export interface User {
   id: string;
   email: string;
   name: string;
+  greet_name: string;
+  active: boolean;
+  designation: string;
+  created_at: string;
 }
 
 export interface Diagram {
