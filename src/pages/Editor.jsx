@@ -9,13 +9,17 @@ import TypesContextProvider from "../context/TypesContext";
 import SaveStateContextProvider from "../context/SaveStateContext";
 import EnumsContextProvider from "../context/EnumsContext";
 import WorkSpace from "../components/Workspace";
+import TopBar from "../components/TopBar";
 import { useThemedPage } from "../hooks";
 
 export default function Editor() {
   useThemedPage();
 
   return (
-    <LayoutContextProvider>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <TopBar />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <LayoutContextProvider>
       <TransformContextProvider>
         <UndoRedoContextProvider>
           <SelectContextProvider>
@@ -36,5 +40,7 @@ export default function Editor() {
         </UndoRedoContextProvider>
       </TransformContextProvider>
     </LayoutContextProvider>
+      </div>
+    </div>
   );
 }

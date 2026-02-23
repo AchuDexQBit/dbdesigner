@@ -1,28 +1,34 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useLayoutEffect } from "react";
 import Editor from "./pages/Editor";
-import BugReport from "./pages/BugReport";
-import Templates from "./pages/Templates";
 import Dashboard from "./pages/Dashboard";
 import SettingsContextProvider from "./context/SettingsContext";
-import NotFound from "./pages/NotFound";
-import { RootRedirect } from "./components/RootRedirect";
+import { AuthGuard } from "./components/AuthGuard";
 
 export default function App() {
   return (
     <SettingsContextProvider>
-      <BrowserRouter>
-        <RestoreScroll />
-        <Routes>
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/editor/:id" element={<Editor />} />
-          <Route path="/editor" element={<Editor />} />
-          <Route path="/bug-report" element={<BugReport />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <RestoreScroll />
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/dashboard"
+          element={
+            <AuthGuard>
+              <Dashboard />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/editor/:id"
+          element={
+            <AuthGuard>
+              <Editor />
+            </AuthGuard>
+          }
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </SettingsContextProvider>
   );
 }

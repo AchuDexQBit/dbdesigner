@@ -1,155 +1,37 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Card, Button, Tag, Spin } from "@douyinfe/semi-ui";
-import { IconUserAdd, IconDeleteStroked } from "@douyinfe/semi-icons";
-import { api, getLoginUrl } from "../api/client";
-import CollaboratorModal from "../components/CollaboratorModal";
-import ChangePasswordModal from "../components/ChangePasswordModal";
+import { useNavigate } from "react-router-dom";
+import { Button, Spin, Toast } from "@douyinfe/semi-ui";
+import { IconPlus } from "@douyinfe/semi-icons";
+import { api } from "../api/client";
+import type { Diagram, SharedDiagram } from "../api/client";
+import { useUser } from "../context/UserContext";
+import DiagramCard, { type DiagramCardItem } from "../components/DiagramCard";
+import TopBar from "../components/TopBar";
 
-type User = { name?: string; email?: string };
-type Diagram = {
-  id: string;
-  name: string;
-  updatedAt?: string;
-  updated_at?: string;
-  ownerName?: string;
-  owner_name?: string;
-  permission?: string;
-};
+type DiagramsData = { owned: Diagram[]; shared: SharedDiagram[] };
 
-type DiagramsData = { owned: Diagram[]; shared: Diagram[] };
-
-function formatDate(raw?: string): string {
-  if (!raw) return "—";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function DiagramCard({
-  diagram,
-  isOwned,
-  onOpen,
-  onShare,
-  onDelete,
-  onRefresh,
-}: {
-  diagram: Diagram;
-  isOwned: boolean;
-  onOpen: (id: string) => void;
-  onShare: (d: Diagram) => void;
-  onDelete: (id: string) => void;
-  onRefresh: () => void;
-}) {
-  const updated =
-    diagram.updatedAt ?? diagram.updated_at;
-  const ownerName = diagram.ownerName ?? diagram.owner_name ?? "—";
-  const permission = diagram.permission ?? "read";
-
-  const handleDelete = () => {
-    if (!window.confirm(`Delete "${diagram.name}"? This cannot be undone.`))
-      return;
-    api
-      .deleteDiagram(diagram.id)
-      .then(() => onRefresh())
-      .catch(() => {});
-  };
-
-  return (
-    <Card
-      key={diagram.id}
-      className="flex flex-col"
-      style={{ minWidth: 260 }}
-      bodyStyle={{ flex: 1, display: "flex", flexDirection: "column" }}
-    >
-      <div className="flex flex-col flex-1">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <h3
-            className="font-semibold truncate flex-1 min-w-0"
-            style={{ color: "var(--dexqbit-text)" }}
-          >
-            {diagram.name}
-          </h3>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {!isOwned && (
-              <Tag size="small" color="blue">
-                {permission}
-              </Tag>
-            )}
-            {isOwned && (
-              <Button
-                type="danger"
-                theme="borderless"
-                size="small"
-                icon={<IconDeleteStroked />}
-                onClick={handleDelete}
-                aria-label="Delete diagram"
-              />
-            )}
-          </div>
-        </div>
-        {!isOwned && (
-          <p
-            className="text-sm mb-1"
-            style={{ color: "var(--dexqbit-text-muted)" }}
-          >
-            Owner: {ownerName}
-          </p>
-        )}
-        <p
-          className="text-xs mb-4"
-          style={{ color: "var(--dexqbit-text-muted)" }}
-        >
-          Updated {formatDate(updated)}
-        </p>
-        <div className="flex flex-wrap gap-2 mt-auto">
-          <Button theme="solid" onClick={() => onOpen(diagram.id)}>
-            Open
-          </Button>
-          {isOwned && (
-            <Button
-              theme="light"
-              icon={<IconUserAdd />}
-              onClick={() => onShare(diagram)}
-              aria-label="Share"
-            >
-              Share
-            </Button>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-}
+const PAGE_BG = "#0a0a0f";
+const TEXT_WHITE = "#ffffff";
+const TEXT_MUTED = "#6b7280";
+const PURPLE = "#7c3aed";
+const DIVIDER = "rgba(255,255,255,0.1)";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useUser();
   const [diagrams, setDiagrams] = useState<DiagramsData>({ owned: [], shared: [] });
   const [loading, setLoading] = useState(true);
-  const [shareModal, setShareModal] = useState<Diagram | null>(null);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const [meRes, diagramsRes] = await Promise.all([
-        api.me(),
-        api.listDiagrams(),
-      ]);
-      setUser((meRes as User) ?? null);
-      setDiagrams(
-        (diagramsRes as DiagramsData) ?? { owned: [], shared: [] }
-      );
+      const res = await api.listDiagrams();
+      setDiagrams(res ?? { owned: [], shared: [] });
     } catch {
-      setUser(null);
       setDiagrams({ owned: [], shared: [] });
-      window.location.replace(getLoginUrl());
-      return;
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -159,172 +41,214 @@ export default function Dashboard() {
     load();
   }, [load]);
 
-  const handleSignOut = async () => {
-    try {
-      await api.logout();
-    } finally {
-      window.location.href = getLoginUrl();
-    }
-  };
-
-  const handleNewDiagram = () => {
+  const handleCreateDiagram = () => {
     const name = window.prompt("Diagram name", "Untitled Diagram");
     if (name == null || name.trim() === "") return;
     api
-      .createDiagram(name.trim())
-      .then((res: unknown) => {
-        const id = (res as { id?: string })?.id;
-        if (id) navigate(`/editor/${id}`);
-        else load();
+      .createDiagram(name.trim(), {})
+      .then((diagram) => {
+        if (diagram?.id) navigate(`/editor/${diagram.id}`);
       })
-      .catch(() => load());
+      .catch(() => {
+        Toast.error("Failed to create diagram. Try again.");
+      });
   };
 
-  const handleOpen = (id: string) => {
-    navigate(`/editor/${id}`);
+  const handleShare = (diagramId: string) => {
+    console.log("share", diagramId);
   };
 
-  if (loading && !user) {
-    return (
-      <div className="dexqbit-theme min-h-screen flex items-center justify-center">
-        <Spin size="large" />
-      </div>
-    );
-  }
+  const handleDelete = async (diagramId: string) => {
+    try {
+      await api.deleteDiagram(diagramId);
+      setDiagrams((prev) => ({
+        ...prev,
+        owned: prev.owned.filter((d) => d.id !== diagramId),
+      }));
+    } catch {
+      Toast.error("Failed to delete diagram. Try again.");
+    }
+  };
+
+  const isOwned = (d: DiagramCardItem) => user?.id != null && d.owner_id === user.id;
 
   return (
-    <div className="dexqbit-theme min-h-screen flex flex-col">
-      {/* Top bar */}
-      <header
-        className="flex items-center justify-between px-4 py-3 border-b"
-        style={{
-          borderColor: "var(--dexqbit-border)",
-          backgroundColor: "var(--dexqbit-bg-elevated)",
-        }}
-      >
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-2 text-lg font-semibold hover:opacity-80 no-underline"
-          style={{ color: "var(--dexqbit-text)" }}
-        >
-          <img
-            src="/logo.png"
-            alt=""
-            className="h-8 w-auto object-contain"
-          />
-          DexQBit DB Designer
-        </Link>
-        <div className="flex items-center gap-3">
-          <span
-            className="font-bold text-lg"
-            style={{ color: "var(--dexqbit-text)" }}
-          >
-            Hi, {user?.name ?? user?.email ?? "User"}
-          </span>
-          <Button theme="borderless" onClick={() => setChangePasswordOpen(true)}>
-            Change Password
-          </Button>
-          <Button theme="borderless" onClick={handleSignOut}>
-            Sign out
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
-        <div className="flex justify-end mb-6">
-          <Button theme="solid" onClick={handleNewDiagram}>
-            New Diagram
-          </Button>
-        </div>
-
-        {/* My Diagrams */}
-        <section className="mb-10">
-          <h2
-            className="text-base font-bold mb-4 py-2 px-3 rounded-md border-l-4"
+    <div
+      style={{
+        background: PAGE_BG,
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      <TopBar />
+      <main style={{ maxWidth: 960, margin: "0 auto", padding: 32, width: "100%", boxSizing: "border-box" }}>
+        {/* Section 1 — My Diagrams */}
+        <section style={{ marginBottom: 40 }}>
+          <div
             style={{
-              color: "var(--dexqbit-text)",
-              backgroundColor: "rgba(255, 255, 255, 0.08)",
-              borderLeftColor: "var(--dexqbit-accent)",
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 16,
+              marginBottom: 24,
             }}
           >
-            My Diagrams
-          </h2>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Spin />
+            <div>
+              <h1
+                style={{
+                  fontSize: 28,
+                  fontWeight: 700,
+                  color: TEXT_WHITE,
+                  margin: 0,
+                  fontFamily: "'Audiowide', system-ui, sans-serif",
+                }}
+              >
+                My Diagrams
+              </h1>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: TEXT_MUTED,
+                  margin: "6px 0 0 0",
+                }}
+              >
+                Create and manage your database schema designs.
+              </p>
             </div>
-          ) : !diagrams.owned?.length ? (
-            <p
-              className="py-6"
-              style={{ color: "var(--dexqbit-text-muted)" }}
+            <Button
+              theme="solid"
+              type="primary"
+              icon={<IconPlus size="large" />}
+              onClick={handleCreateDiagram}
+              className="dashboard-create-btn"
+              style={{
+                background: PURPLE,
+                borderColor: PURPLE,
+                borderRadius: 8,
+                padding: "10px 20px",
+                fontSize: 14,
+                fontWeight: 500,
+                flexShrink: 0,
+              }}
             >
-              No diagrams yet. Create one with &quot;New Diagram&quot;.
+              Create New Diagram
+            </Button>
+          </div>
+
+          {loading && (
+            <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
+              <Spin size="large" />
+            </div>
+          )}
+
+          {!loading && loadError && (
+            <p style={{ padding: "24px 0", fontSize: 13, color: TEXT_MUTED }}>
+              Failed to load diagrams. Try refreshing.
             </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          )}
+
+          {!loading && !loadError && diagrams.owned.length === 0 && (
+            <p
+              style={{
+                textAlign: "center",
+                padding: "32px 0",
+                fontSize: 13,
+                color: TEXT_MUTED,
+                margin: 0,
+              }}
+            >
+              You haven&apos;t created any diagrams yet.
+              <br />
+              Click &quot;Create New Diagram&quot; to get started.
+            </p>
+          )}
+
+          {!loading && !loadError && diagrams.owned.length > 0 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 16,
+              }}
+              className="dashboard-card-grid"
+            >
               {diagrams.owned.map((d) => (
                 <DiagramCard
                   key={d.id}
                   diagram={d}
-                  isOwned
-                  onOpen={handleOpen}
-                  onShare={setShareModal}
-                  onDelete={() => {}}
-                  onRefresh={load}
+                  isOwned={isOwned(d)}
+                  currentUserId={user?.id ?? ""}
+                  onShare={handleShare}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
           )}
         </section>
 
-        {/* Shared with me */}
+        {/* Divider: 40px margin top and bottom */}
+        <div
+          style={{
+            width: "100%",
+            height: 1,
+            background: DIVIDER,
+            margin: "40px 0",
+          }}
+        />
+
+        {/* Section 2 — Shared with me */}
         <section>
           <h2
-            className="text-base font-bold mb-4 py-2 px-3 rounded-md border-l-4"
             style={{
-              color: "var(--dexqbit-text)",
-              backgroundColor: "rgba(255, 255, 255, 0.08)",
-              borderLeftColor: "var(--dexqbit-accent)",
+              fontSize: 28,
+              fontWeight: 700,
+              color: TEXT_WHITE,
+              margin: "0 0 24px 0",
+              fontFamily: "'Audiowide', system-ui, sans-serif",
             }}
           >
             Shared with me
           </h2>
-          {loading ? null : !diagrams.shared?.length ? (
+
+          {!loading && !loadError && diagrams.shared.length === 0 && (
             <p
-              className="py-6"
-              style={{ color: "var(--dexqbit-text-muted)" }}
+              style={{
+                padding: "32px 0",
+                fontSize: 13,
+                color: TEXT_MUTED,
+                margin: 0,
+              }}
             >
-              No diagrams shared with you yet.
+              No diagrams have been shared with you yet.
             </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          )}
+
+          {!loading && !loadError && diagrams.shared.length > 0 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 16,
+              }}
+              className="dashboard-card-grid"
+            >
               {diagrams.shared.map((d) => (
                 <DiagramCard
                   key={d.id}
                   diagram={d}
                   isOwned={false}
-                  onOpen={handleOpen}
-                  onShare={() => {}}
-                  onDelete={() => {}}
-                  onRefresh={load}
+                  currentUserId={user?.id ?? ""}
+                  onShare={handleShare}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
           )}
         </section>
       </main>
-
-      {shareModal && (
-        <CollaboratorModal
-          diagramId={shareModal.id}
-          isOpen={!!shareModal}
-          onClose={() => setShareModal(null)}
-        />
-      )}
-      <ChangePasswordModal
-        isOpen={changePasswordOpen}
-        onClose={() => setChangePasswordOpen(false)}
-      />
     </div>
   );
 }
