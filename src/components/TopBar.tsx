@@ -33,7 +33,7 @@ function LogoutIcon() {
 
 function getLoginRedirectUrl(): string {
   const base = import.meta.env.VITE_TOOLS_URL ?? "";
-  return base ? `${base.replace(/\/$/, "")}/login` : "/login";
+  return base ? `${base.replace(/\/$/, "")}` : "";
 }
 
 export default function TopBar() {

@@ -39,7 +39,7 @@ const TOOLS_URL =
 
 /** Login URL on the tools app. Use for manual redirects (e.g. after logout). */
 export function getLoginUrl(): string {
-  return `${TOOLS_URL}/login`;
+  return `${TOOLS_URL}`;
 }
 
 // ─── Request helper (internal) ─────────────────────────────────────────────
@@ -64,7 +64,7 @@ async function req<T>(
 
   if (res.status === 401) {
     if (!options?.skip401Redirect) {
-      window.location.href = `${TOOLS_URL}/login`;
+      window.location.href = `${TOOLS_URL}`;
     }
     throw new Error("Not authenticated");
   }
