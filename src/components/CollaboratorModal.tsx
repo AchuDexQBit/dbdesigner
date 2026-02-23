@@ -585,32 +585,6 @@ export default function CollaboratorModal({
             )}
           </section>
         </div>
-
-        {/* Footer: Close */}
-        <div
-          style={{
-            padding: "12px 24px 20px",
-            borderTop: `1px solid ${DIVIDER}`,
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: "8px 16px",
-              border: "none",
-              background: "none",
-              color: TEXT_MUTED,
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: "pointer",
-            }}
-          >
-            Close
-          </button>
-        </div>
       </div>
     </div>
   );

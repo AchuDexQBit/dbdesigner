@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { api } from "../api/client";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 // Match tools dashboard: border-white/10, purple accent #7c3aed for title, avatar #9A70DD, divider #4A2E70/80
 const BAR_BORDER = "rgba(255,255,255,0.1)";
@@ -23,8 +25,14 @@ function getLoginRedirectUrl(): string {
   return base ? `${base}/login` : "/login";
 }
 
+const TEXT_MUTED = "rgba(255,255,255,0.6)";
+
 export default function TopBar() {
   const { user } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const isEditor = location.pathname.startsWith("/editor/");
 
   if (!user) return null;
 
@@ -57,25 +65,74 @@ export default function TopBar() {
         fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
       }}
     >
-      <p
-        style={{
-          margin: 0,
-          fontSize: 22,
-          fontWeight: 400,
-          color: TITLE_PURPLE,
-          fontFamily: "'Audiowide', system-ui, sans-serif",
-        }}
-      >
-        DexQBit DB Designer
-      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {isEditor && (
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            style={{
+              padding: 0,
+              border: "none",
+              background: "none",
+              color: TEXT_MUTED,
+              fontSize: 14,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            ← Dashboard
+          </button>
+        )}
+        <p
+          style={{
+            margin: 0,
+            fontSize: 22,
+            fontWeight: 400,
+            color: TITLE_PURPLE,
+            fontFamily: "'Audiowide', system-ui, sans-serif",
+          }}
+        >
+          DexQBit DB Designer
+        </p>
+      </div>
 
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 12,
+          gap: 16,
         }}
       >
+        <button
+          type="button"
+          onClick={() => setChangePasswordOpen(true)}
+          style={{
+            padding: 0,
+            border: "none",
+            background: "none",
+            color: TEXT_MUTED,
+            fontSize: 13,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          Change Password
+        </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          style={{
+            padding: 0,
+            border: "none",
+            background: "none",
+            color: TEXT_MUTED,
+            fontSize: 13,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          Logout
+        </button>
         <div style={{ textAlign: "right" }}>
           <p
             style={{
@@ -119,6 +176,11 @@ export default function TopBar() {
           {initials}
         </div>
       </div>
+
+      <ChangePasswordModal
+        isOpen={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </header>
   );
 }

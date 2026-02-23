@@ -23,7 +23,7 @@ import { IconAlertTriangle } from "@douyinfe/semi-icons";
 import { useTranslation } from "react-i18next";
 import { databases } from "../data/databases";
 import { isRtl } from "../i18n/utils/rtl";
-import { useSearchParams, useParams } from "react-router-dom";
+import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { get, SHARE_FILENAME } from "../api/gists";
 import { nanoid } from "nanoid";
 import { api } from "../api/client";
@@ -68,8 +68,10 @@ export default function WorkSpace() {
   const { undoStack, redoStack, setUndoStack, setRedoStack } = useUndoRedo();
   const { t, i18n } = useTranslation();
   const { id: urlId } = useParams();
+  const navigate = useNavigate();
   let [searchParams, setSearchParams] = useSearchParams();
   const saveDebounceRef = useRef(null);
+  const saveForbiddenRef = useRef(false);
 
   const handleResize = (e) => {
     if (!resize) return;
@@ -105,15 +107,23 @@ export default function WorkSpace() {
 
   const save = useCallback(async () => {
     if (urlId) {
+      if (saveForbiddenRef.current) return;
       setSaveState(State.SAVING);
       try {
         await api.saveDiagram(urlId, title, buildDiagramData());
         setSaveState(State.SAVED);
         setLastSaved(new Date().toLocaleString());
+        setTimeout(() => setSaveState(State.NONE), 2000);
       } catch (err) {
-        setSaveState(State.ERROR);
-        const message = err instanceof Error ? err.message : "Failed to save diagram";
-        Toast.error(message);
+        if (err?.status === 403) {
+          saveForbiddenRef.current = true;
+          setLayout((prev) => ({ ...prev, readOnly: true }));
+          Toast.warning("You have view-only access. Changes will not be saved.");
+          setSaveState(State.NONE);
+        } else {
+          setSaveState(State.ERROR);
+          Toast.error("Error saving");
+        }
       }
       return;
     }
@@ -266,8 +276,15 @@ export default function WorkSpace() {
         setSaveState(State.SAVED);
         setLastSaved(new Date().toLocaleString());
         window.name = `d ${urlId}`;
-      } catch {
+      } catch (err) {
         setSaveState(State.FAILED_TO_LOAD);
+        const status = err?.status;
+        if (status === 404 || status === 403) {
+          Toast.error("Diagram not found or access denied.");
+        } else {
+          Toast.error("Failed to load diagram.");
+        }
+        navigate("/dashboard", { replace: true });
       }
       return;
     }
@@ -531,6 +548,7 @@ export default function WorkSpace() {
     }
   }, [
     urlId,
+    navigate,
     setTransform,
     setRedoStack,
     setUndoStack,
@@ -586,6 +604,7 @@ export default function WorkSpace() {
   useEffect(() => {
     if (!urlId) return;
     if (layout.readOnly) return;
+    if (saveForbiddenRef.current) return;
 
     const delay = 1500;
     if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);

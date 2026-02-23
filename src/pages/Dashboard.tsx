@@ -44,10 +44,6 @@ export default function Dashboard() {
     load();
   }, [load]);
 
-  useEffect(() => {
-    console.log("[Dashboard] cookies:", document.cookie);
-  }, []);
-
   const handleCreateDiagram = () => {
     const name = window.prompt("Diagram name", "Untitled Diagram");
     if (name == null || name.trim() === "") return;

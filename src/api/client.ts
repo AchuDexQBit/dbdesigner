@@ -76,7 +76,9 @@ async function req<T>(
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     const message = typeof data?.error === "string" ? data.error : "Request failed";
-    throw new Error(message);
+    const err = new Error(message) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
 
   return res.json();

@@ -53,8 +53,8 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
         handleClose();
         window.location.href = getLoginUrl();
       }, 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+    } catch {
+      setError("Failed to change password. Try again.");
     } finally {
       setLoading(false);
     }
