@@ -2,29 +2,26 @@ import React, { useEffect, useState } from "react";
 import {
   Modal,
   Form,
-  Avatar,
   Select,
   Button,
   Input,
-  Tag,
-  Toast,
   Spin,
+  Toast,
 } from "@douyinfe/semi-ui";
 import { IconDeleteStroked } from "@douyinfe/semi-icons";
 import { api } from "../api/client";
-
-export type Collaborator = {
-  userId?: string;
-  id?: string;
-  name?: string;
-  email?: string;
-  permission: string;
-};
+import type { Collaborator as ApiCollaborator } from "../api/client";
 
 const PERMISSION_OPTIONS = [
-  { value: "read", label: "View" },
-  { value: "write", label: "Edit" },
+  { value: "view", label: "View" },
+  { value: "edit", label: "Edit" },
 ];
+
+const CARD_BG = "#12111a";
+const CARD_BORDER = "rgba(255,255,255,0.07)";
+const TEXT_WHITE = "#ffffff";
+const TEXT_MUTED = "#6b7280";
+const PURPLE = "#7c3aed";
 
 function getInitials(name?: string, email?: string): string {
   if (name && name.trim()) {
@@ -41,51 +38,43 @@ function getInitials(name?: string, email?: string): string {
   return "?";
 }
 
-function permissionLabel(permission: string): string {
-  const p = (permission ?? "").toLowerCase();
-  if (p === "edit" || p === "write") return "Edit";
-  if (p === "view" || p === "read") return "View";
-  return PERMISSION_OPTIONS.find((o) => o.value === permission)?.label ?? permission;
+function normalizePermission(p: string | undefined): "view" | "edit" {
+  const lower = (p ?? "").toLowerCase();
+  if (lower === "edit" || lower === "write" || lower === "editor") return "edit";
+  return "view";
 }
 
-/** Normalize API permission to option value so Select always has a valid value. */
-function normalizePermission(p: string | undefined): string {
-  if (!p) return "read";
-  const lower = String(p).toLowerCase();
-  if (lower === "write" || lower === "edit" || lower === "editor") return "write";
-  return "read";
-}
-
-type Props = {
+export interface CollaboratorModalProps {
   diagramId: string;
+  diagramName: string;
   isOpen: boolean;
   onClose: () => void;
-};
+}
 
 export default function CollaboratorModal({
   diagramId,
+  diagramName,
   isOpen,
   onClose,
-}: Props) {
-  const [list, setList] = useState<Collaborator[]>([]);
+}: CollaboratorModalProps) {
+  const [list, setList] = useState<ApiCollaborator[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [addEmail, setAddEmail] = useState("");
-  const [addPermission, setAddPermission] = useState("read");
+  const [addPermission, setAddPermission] = useState<"view" | "edit">("view");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
   const load = async () => {
     if (!diagramId) return;
     setLoading(true);
+    setLoadError(false);
     try {
-      const data = (await api.listCollaborators(diagramId)) as
-        | Collaborator[]
-        | { collaborators?: Collaborator[] };
-      setList(
-        Array.isArray(data) ? data : data?.collaborators ?? []
-      );
+      const data = await api.listCollaborators(diagramId);
+      setList(Array.isArray(data) ? data : []);
     } catch {
       setList([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -101,176 +90,281 @@ export default function CollaboratorModal({
     setAdding(true);
     setAddError(null);
     try {
-      await api.addCollaborator(diagramId, email, addPermission);
+      const res = await api.addCollaborator(diagramId, email, addPermission);
+      const user = res?.user;
+      if (user) {
+        setList((prev) => [
+          ...prev,
+          {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            permission: addPermission,
+            added_at: new Date().toISOString(),
+          },
+        ]);
+      }
       setAddEmail("");
-      await load();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "";
+      const msg = err instanceof Error ? err.message : "";
       const is404 =
-        message.toLowerCase().includes("404") ||
-        message.toLowerCase().includes("not found");
+        msg.toLowerCase().includes("404") ||
+        msg.toLowerCase().includes("not found");
       if (is404) {
-        setAddError(message || "User not found.");
+        setAddError("No account found for that email.");
       } else {
-        setAddError(null);
-        Toast.error("Something went wrong. Please try again.");
+        setAddError("Failed to add collaborator.");
       }
     } finally {
       setAdding(false);
     }
   };
 
-  const handleUpdatePermission = async (userId: string, permission: string) => {
-    const value = normalizePermission(permission);
+  const handleUpdatePermission = async (
+    userId: string,
+    permission: "view" | "edit"
+  ) => {
     try {
-      const res = await api.updateCollaborator(diagramId, userId, value);
-      const data = res && typeof res === "object" && "permission" in res ? (res as { permission: string }) : null;
-      const serverPermission = data?.permission;
+      await api.updateCollaborator(diagramId, userId, permission);
       setList((prev) =>
-        prev.map((c) => {
-          const uid = c.userId ?? c.id ?? "";
-          if (uid !== userId) return c;
-          const perm = serverPermission ?? value;
-          return { ...c, permission: perm };
-        }),
+        prev.map((c) =>
+          c.id === userId ? { ...c, permission } : c
+        )
       );
-      if (!serverPermission) await load();
     } catch {
       Toast.error("Failed to update permission.");
-      await load();
     }
   };
 
   const handleRemove = async (userId: string) => {
     try {
       await api.removeCollaborator(diagramId, userId);
-      await load();
+      setList((prev) => prev.filter((c) => c.id !== userId));
     } catch {
       Toast.error("Failed to remove collaborator.");
     }
   };
 
+  const title = diagramName
+    ? `Share: ${diagramName}`
+    : "Share diagram";
+
   return (
     <Modal
-      title="Share Diagram"
+      title={title}
       visible={isOpen}
       onCancel={onClose}
       footer={null}
       centered
       width={480}
       closable
-      getPopupContainer={() => document.querySelector(".dexqbit-theme") ?? document.body}
+      getPopupContainer={() =>
+        document.querySelector(".dexqbit-theme") ?? document.body
+      }
       modalContentClass="dexqbit-theme"
-      bodyStyle={{ paddingBottom: 24 }}
+      bodyStyle={{
+        paddingBottom: 24,
+        background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        borderRadius: 10,
+      }}
     >
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Spin />
+        <div style={{ display: "flex", justifyContent: "center", padding: "32px 0" }}>
+          <Spin size="large" />
         </div>
+      ) : loadError ? (
+        <p
+          style={{
+            padding: "24px 0",
+            fontSize: 14,
+            color: TEXT_MUTED,
+            margin: 0,
+          }}
+        >
+          Failed to load collaborators.
+        </p>
       ) : list.length === 0 ? (
-        <p className="text-sm py-4" style={{ color: "var(--dexqbit-text-muted)" }}>
+        <p
+          style={{
+            padding: "24px 0",
+            fontSize: 14,
+            color: TEXT_MUTED,
+            margin: 0,
+          }}
+        >
           No collaborators yet.
         </p>
       ) : (
-        <ul className="space-y-0 max-h-64 overflow-y-auto border-b pb-4 mb-4" style={{ borderColor: "var(--dexqbit-border)" }}>
-          {list.map((c) => {
-            const uid = c.userId ?? c.id ?? "";
-            const displayName = c.name ?? c.email ?? uid;
-            const initials = getInitials(c.name, c.email);
-            return (
-              <li
-                key={uid}
-                className="flex items-center gap-3 py-3 border-b last:border-0"
-                style={{ borderColor: "var(--dexqbit-border)" }}
+        <ul
+          style={{
+            listStyle: "none",
+            margin: 0,
+            padding: 0,
+            maxHeight: 280,
+            overflowY: "auto",
+            borderBottom: `1px solid ${CARD_BORDER}`,
+            paddingBottom: 16,
+            marginBottom: 16,
+          }}
+        >
+          {list.map((c) => (
+            <li
+              key={c.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 0",
+                borderBottom: `1px solid ${CARD_BORDER}`,
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  background: PURPLE,
+                  color: TEXT_WHITE,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}
               >
-                <Avatar size="small" color="blue">
-                  {initials}
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate" style={{ color: "var(--dexqbit-text)" }}>
-                    {displayName}
-                  </div>
-                  {c.email && c.name && (
-                    <div className="text-xs truncate" style={{ color: "var(--dexqbit-text-muted)" }}>
-                      {c.email}
-                    </div>
-                  )}
+                {getInitials(c.name, c.email)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: TEXT_WHITE,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {c.name || c.email || c.id}
                 </div>
-                <Tag size="small" color="blue">
-                  {permissionLabel(c.permission)}
-                </Tag>
-                <Select
-                  size="small"
-                  value={normalizePermission(c.permission)}
-                  onChange={(v) => {
+                {c.email && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: TEXT_MUTED,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {c.email}
+                  </div>
+                )}
+              </div>
+              <Select
+                size="small"
+                value={normalizePermission(c.permission)}
+                onChange={(v) => {
                   const val =
                     typeof v === "string"
-                      ? v
+                      ? (v as "view" | "edit")
                       : (v && typeof v === "object" && "value" in v
-                          ? (v as { value: string }).value
-                          : undefined) ?? c.permission;
-                  handleUpdatePermission(uid, val);
+                        ? (v as { value: string }).value
+                        : undefined);
+                  if (val === "view" || val === "edit")
+                    handleUpdatePermission(c.id, val);
                 }}
-                  optionList={PERMISSION_OPTIONS}
-                  style={{ width: 88 }}
-                />
-                <Button
-                  type="danger"
-                  theme="borderless"
-                  icon={<IconDeleteStroked />}
-                  size="small"
-                  onClick={() => handleRemove(uid)}
-                  aria-label="Remove collaborator"
-                />
-              </li>
-            );
-          })}
+                optionList={PERMISSION_OPTIONS}
+                style={{ width: 88 }}
+              />
+              <button
+                type="button"
+                onClick={() => handleRemove(c.id)}
+                aria-label="Remove collaborator"
+                style={{
+                  padding: 4,
+                  border: "none",
+                  background: "none",
+                  color: TEXT_MUTED,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <IconDeleteStroked size="small" />
+              </button>
+            </li>
+          ))}
         </ul>
       )}
 
-      <Form layout="vertical" className="semi-form-vertical">
-        <div className="semi-form-field">
-          <label className="semi-form-field-label">Add person</label>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            <Input
-              placeholder="Email"
-              value={addEmail}
-              onChange={(v) => {
-                setAddEmail(String(v ?? ""));
-                setAddError(null);
+      {!loading && (
+        <Form layout="vertical" className="semi-form-vertical">
+          <div className="semi-form-field">
+            <label className="semi-form-field-label" style={{ color: TEXT_WHITE }}>
+              Add person
+            </label>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 8,
               }}
-              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-              disabled={adding}
-              className="flex-1"
-              style={{ minWidth: 160 }}
-            />
-            <Select
-              value={addPermission}
-              onChange={(v) => setAddPermission(String(v ?? "read"))}
-              optionList={PERMISSION_OPTIONS}
-              disabled={adding}
-              style={{ width: 100 }}
-            />
-            <Button
-              theme="solid"
-              loading={adding}
-              onClick={handleAdd}
-              disabled={!addEmail.trim()}
             >
-              Add
-            </Button>
+              <Input
+                placeholder="Email"
+                value={addEmail}
+                onChange={(v) => {
+                  setAddEmail(String(v ?? ""));
+                  setAddError(null);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                disabled={adding}
+                style={{ flex: 1, minWidth: 160 }}
+              />
+              <Select
+                value={addPermission}
+                onChange={(v) => {
+                  const val = typeof v === "string" ? v : (v as { value?: string })?.value;
+                  setAddPermission(val === "edit" || val === "view" ? val : "view");
+                }}
+                optionList={PERMISSION_OPTIONS}
+                disabled={adding}
+                style={{ width: 100 }}
+              />
+              <Button
+                theme="solid"
+                loading={adding}
+                onClick={handleAdd}
+                disabled={!addEmail.trim()}
+                style={{
+                  background: PURPLE,
+                  borderColor: PURPLE,
+                }}
+              >
+                Add
+              </Button>
+            </div>
           </div>
-        </div>
-        {addError && (
-          <p
-            className="mt-2 text-sm"
-            style={{ color: "var(--semi-color-danger)" }}
-            role="alert"
-          >
-            {addError}
-          </p>
-        )}
-      </Form>
+          {addError && (
+            <p
+              style={{
+                margin: "8px 0 0 0",
+                fontSize: 13,
+                color: "var(--semi-color-danger)",
+              }}
+              role="alert"
+            >
+              {addError}
+            </p>
+          )}
+        </Form>
+      )}
     </Modal>
   );
 }

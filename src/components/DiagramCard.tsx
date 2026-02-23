@@ -9,23 +9,18 @@ const TEXT_MUTED = "#6b7280";
 const PURPLE = "#7c3aed";
 const ICON_BG_OWNED = "rgba(124,58,237,0.25)";
 const ICON_BG_SHARED = "rgba(100,100,120,0.3)";
-const ICON_FILL_SHARED = "#8888aa";
 
-/** Diagram/table icon: two rectangles connected (22×22). */
-function DiagramTableIcon({ fill = PURPLE }: { fill?: string }) {
+/** DB Designer app icon (from public/dbdesigner.png). Used for both owned and shared cards. */
+function DiagramCardIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M5 4h8a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm0 9h8a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1zm10-9h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm0 6h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1z"
-        fill={fill}
-      />
-    </svg>
+    <img
+      src="/dbdesigner.png"
+      alt=""
+      width={28}
+      height={28}
+      style={{ objectFit: "contain" }}
+    />
   );
-}
-
-/** Shared card: same table icon with muted fill. */
-function SharedDiagramIcon() {
-  return <DiagramTableIcon fill={ICON_FILL_SHARED} />;
 }
 
 /** Branching share icon (3 nodes connected by lines), 18×18. */
@@ -99,13 +94,14 @@ export default function DiagramCard({
     onDelete(diagram.id);
   };
 
-  const handleShare = (e: React.MouseEvent) => {
+  const showActions = isOwned && diagram.owner_id === currentUserId;
+  const iconBg = isOwned ? ICON_BG_OWNED : ICON_BG_SHARED;
+
+  const openShareModal = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     onShare(diagram.id);
   };
-
-  const showActions = isOwned && diagram.owner_id === currentUserId;
-  const iconBg = isOwned ? ICON_BG_OWNED : ICON_BG_SHARED;
 
   return (
     <div
@@ -147,13 +143,13 @@ export default function DiagramCard({
             flexShrink: 0,
           }}
         >
-          {isOwned ? <DiagramTableIcon /> : <SharedDiagramIcon />}
+          <DiagramCardIcon />
         </div>
         {showActions && (
-          <div data-card-actions style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <div data-card-actions style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
             <button
               type="button"
-              onClick={handleShare}
+              onClick={openShareModal}
               aria-label="Share"
               style={{
                 padding: 0,

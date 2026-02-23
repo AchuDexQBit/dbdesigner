@@ -7,6 +7,7 @@ import type { Diagram, SharedDiagram } from "../api/client";
 import { useUser } from "../context/UserContext";
 import DiagramCard, { type DiagramCardItem } from "../components/DiagramCard";
 import TopBar from "../components/TopBar";
+import CollaboratorModal from "../components/CollaboratorModal";
 
 type DiagramsData = { owned: Diagram[]; shared: SharedDiagram[] };
 
@@ -21,6 +22,9 @@ export default function Dashboard() {
   const [diagrams, setDiagrams] = useState<DiagramsData>({ owned: [], shared: [] });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [activeDiagramId, setActiveDiagramId] = useState<string | null>(null);
+  const [activeDiagramName, setActiveDiagramName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,7 +62,18 @@ export default function Dashboard() {
   };
 
   const handleShare = (diagramId: string) => {
-    console.log("share", diagramId);
+    const owned = diagrams.owned.find((d) => d.id === diagramId);
+    const shared = diagrams.shared.find((d) => d.id === diagramId);
+    const diagram = owned ?? shared ?? null;
+    setActiveDiagramId(diagramId);
+    setActiveDiagramName(diagram?.name ?? null);
+    setShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+    setActiveDiagramId(null);
+    setActiveDiagramName(null);
   };
 
   const handleDelete = async (diagramId: string) => {
@@ -252,6 +267,13 @@ export default function Dashboard() {
           )}
         </section>
       </main>
+
+      <CollaboratorModal
+        diagramId={activeDiagramId ?? ""}
+        diagramName={activeDiagramName ?? ""}
+        isOpen={shareModalOpen}
+        onClose={handleCloseShareModal}
+      />
     </div>
   );
 }
