@@ -1,27 +1,24 @@
 import React, { useEffect, useState } from "react";
-import {
-  Modal,
-  Form,
-  Select,
-  Button,
-  Input,
-  Spin,
-  Toast,
-} from "@douyinfe/semi-ui";
-import { IconDeleteStroked } from "@douyinfe/semi-icons";
+import { Toast } from "@douyinfe/semi-ui";
 import { api } from "../api/client";
 import type { Collaborator as ApiCollaborator } from "../api/client";
+import { useUser } from "../context/UserContext";
 
 const PERMISSION_OPTIONS = [
   { value: "view", label: "View" },
   { value: "edit", label: "Edit" },
 ];
 
-const CARD_BG = "#12111a";
-const CARD_BORDER = "rgba(255,255,255,0.07)";
+const MODAL_BG = "#12111a";
+const CARD_BG = "rgba(255,255,255,0.06)";
+const CARD_BORDER = "rgba(255,255,255,0.08)";
 const TEXT_WHITE = "#ffffff";
-const TEXT_MUTED = "#6b7280";
+const TEXT_MUTED = "rgba(255,255,255,0.55)";
 const PURPLE = "#7c3aed";
+const OVERLAY_BG = "rgba(0,0,0,0.65)";
+const INPUT_BG = "rgba(255,255,255,0.06)";
+const BADGE_BG = "rgba(255,255,255,0.12)";
+const DIVIDER = "rgba(255,255,255,0.1)";
 
 function getInitials(name?: string, email?: string): string {
   if (name && name.trim()) {
@@ -44,6 +41,10 @@ function normalizePermission(p: string | undefined): "view" | "edit" {
   return "view";
 }
 
+function permissionLabel(p: string): string {
+  return normalizePermission(p) === "edit" ? "Editor" : "Viewer";
+}
+
 export interface CollaboratorModalProps {
   diagramId: string;
   diagramName: string;
@@ -57,6 +58,7 @@ export default function CollaboratorModal({
   isOpen,
   onClose,
 }: CollaboratorModalProps) {
+  const { user: currentUser } = useUser();
   const [list, setList] = useState<ApiCollaborator[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -145,226 +147,471 @@ export default function CollaboratorModal({
     }
   };
 
-  const title = diagramName
-    ? `Share: ${diagramName}`
-    : "Share diagram";
+  const sectionLabelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.08em",
+    color: TEXT_MUTED,
+    margin: "0 0 8px 0",
+    textTransform: "uppercase",
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <Modal
-      title={title}
-      visible={isOpen}
-      onCancel={onClose}
-      footer={null}
-      centered
-      width={480}
-      closable
-      getPopupContainer={() =>
-        document.querySelector(".dexqbit-theme") ?? document.body
-      }
-      modalContentClass="dexqbit-theme"
-      bodyStyle={{
-        paddingBottom: 24,
-        background: CARD_BG,
-        border: `1px solid ${CARD_BORDER}`,
-        borderRadius: 10,
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-diagram-title"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        boxSizing: "border-box",
       }}
     >
-      {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "32px 0" }}>
-          <Spin size="large" />
-        </div>
-      ) : loadError ? (
-        <p
-          style={{
-            padding: "24px 0",
-            fontSize: 14,
-            color: TEXT_MUTED,
-            margin: 0,
-          }}
-        >
-          Failed to load collaborators.
-        </p>
-      ) : list.length === 0 ? (
-        <p
-          style={{
-            padding: "24px 0",
-            fontSize: 14,
-            color: TEXT_MUTED,
-            margin: 0,
-          }}
-        >
-          No collaborators yet.
-        </p>
-      ) : (
-        <ul
-          style={{
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-            maxHeight: 280,
-            overflowY: "auto",
-            borderBottom: `1px solid ${CARD_BORDER}`,
-            paddingBottom: 16,
-            marginBottom: 16,
-          }}
-        >
-          {list.map((c) => (
-            <li
-              key={c.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "10px 0",
-                borderBottom: `1px solid ${CARD_BORDER}`,
-              }}
-            >
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  background: PURPLE,
-                  color: TEXT_WHITE,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  flexShrink: 0,
-                }}
-              >
-                {getInitials(c.name, c.email)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: TEXT_WHITE,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {c.name || c.email || c.id}
-                </div>
-                {c.email && (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: TEXT_MUTED,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {c.email}
-                  </div>
-                )}
-              </div>
-              <Select
-                size="small"
-                value={normalizePermission(c.permission)}
-                onChange={(v) => {
-                  const val =
-                    typeof v === "string"
-                      ? (v as "view" | "edit")
-                      : (v && typeof v === "object" && "value" in v
-                        ? (v as { value: string }).value
-                        : undefined);
-                  if (val === "view" || val === "edit")
-                    handleUpdatePermission(c.id, val);
-                }}
-                optionList={PERMISSION_OPTIONS}
-                style={{ width: 88 }}
-              />
-              <button
-                type="button"
-                onClick={() => handleRemove(c.id)}
-                aria-label="Remove collaborator"
-                style={{
-                  padding: 4,
-                  border: "none",
-                  background: "none",
-                  color: TEXT_MUTED,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <IconDeleteStroked size="small" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Overlay — click to close */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: OVERLAY_BG,
+          cursor: "pointer",
+        }}
+        onClick={onClose}
+        aria-hidden
+      />
 
-      {!loading && (
-        <Form layout="vertical" className="semi-form-vertical">
-          <div className="semi-form-field">
-            <label className="semi-form-field-label" style={{ color: TEXT_WHITE }}>
-              Add person
-            </label>
+      {/* Modal panel */}
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 480,
+          maxHeight: "calc(100vh - 48px)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          background: MODAL_BG,
+          borderRadius: 16,
+          boxShadow: "0 24px 48px rgba(0,0,0,0.4)",
+          border: `1px solid ${CARD_BORDER}`,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header: title + close X */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            padding: "20px 24px 0",
+          }}
+        >
+          <h2
+            id="share-diagram-title"
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 700,
+              color: TEXT_WHITE,
+              fontFamily: "'Audiowide', system-ui, sans-serif",
+            }}
+          >
+            Share Diagram
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              margin: -4,
+              padding: 4,
+              border: "none",
+              background: "none",
+              color: TEXT_WHITE,
+              cursor: "pointer",
+              fontSize: 20,
+              lineHeight: 1,
+              opacity: 0.9,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Divider below title */}
+        <div
+          style={{
+            height: 1,
+            background: DIVIDER,
+            margin: "16px 24px 0",
+          }}
+        />
+
+        {/* Body — scrollable */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "24px 24px 16px",
+          }}
+        >
+          {/* INVITE VIA EMAIL */}
+          <section style={{ marginBottom: 24 }}>
+            <p style={sectionLabelStyle}>Invite via email</p>
             <div
               style={{
                 display: "flex",
+                gap: 10,
+                alignItems: "stretch",
                 flexWrap: "wrap",
-                alignItems: "center",
-                gap: 8,
-                marginTop: 8,
               }}
             >
-              <Input
-                placeholder="Email"
+              <input
+                type="email"
+                placeholder="Email Address"
                 value={addEmail}
-                onChange={(v) => {
-                  setAddEmail(String(v ?? ""));
+                onChange={(e) => {
+                  setAddEmail(e.target.value);
                   setAddError(null);
                 }}
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                 disabled={adding}
-                style={{ flex: 1, minWidth: 160 }}
-              />
-              <Select
-                value={addPermission}
-                onChange={(v) => {
-                  const val = typeof v === "string" ? v : (v as { value?: string })?.value;
-                  setAddPermission(val === "edit" || val === "view" ? val : "view");
-                }}
-                optionList={PERMISSION_OPTIONS}
-                disabled={adding}
-                style={{ width: 100 }}
-              />
-              <Button
-                theme="solid"
-                loading={adding}
-                onClick={handleAdd}
-                disabled={!addEmail.trim()}
                 style={{
-                  background: PURPLE,
-                  borderColor: PURPLE,
+                  flex: "1 1 160px",
+                  minWidth: 0,
+                  height: 40,
+                  padding: "0 14px",
+                  borderRadius: 10,
+                  border: `1px solid ${CARD_BORDER}`,
+                  background: INPUT_BG,
+                  color: TEXT_WHITE,
+                  fontSize: 14,
+                }}
+              />
+              <select
+                value={addPermission}
+                onChange={(e) =>
+                  setAddPermission(
+                    e.target.value === "edit" ? "edit" : "view"
+                  )
+                }
+                disabled={adding}
+                style={{
+                  width: 100,
+                  height: 40,
+                  padding: "0 12px",
+                  borderRadius: 10,
+                  border: `1px solid ${CARD_BORDER}`,
+                  background: INPUT_BG,
+                  color: TEXT_WHITE,
+                  fontSize: 14,
+                  cursor: "pointer",
                 }}
               >
-                Add
-              </Button>
+                {PERMISSION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!addEmail.trim() || adding}
+                style={{
+                  width: 80,
+                  height: 40,
+                  padding: 0,
+                  borderRadius: 10,
+                  border: "none",
+                  background: PURPLE,
+                  color: TEXT_WHITE,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: adding ? "wait" : "pointer",
+                  opacity: !addEmail.trim() ? 0.6 : 1,
+                }}
+              >
+                {adding ? "..." : "Add"}
+              </button>
             </div>
-          </div>
-          {addError && (
-            <p
-              style={{
-                margin: "8px 0 0 0",
-                fontSize: 13,
-                color: "var(--semi-color-danger)",
-              }}
-              role="alert"
-            >
-              {addError}
-            </p>
-          )}
-        </Form>
-      )}
-    </Modal>
+            {addError && (
+              <p
+                style={{
+                  margin: "8px 0 0 0",
+                  fontSize: 13,
+                  color: "#f87171",
+                }}
+                role="alert"
+              >
+                {addError}
+              </p>
+            )}
+          </section>
+
+          {/* SHARED WITH */}
+          <section>
+            <p style={sectionLabelStyle}>Shared with</p>
+
+            {loading ? (
+              <div
+                style={{
+                  padding: "32px 0",
+                  textAlign: "center",
+                  color: TEXT_MUTED,
+                  fontSize: 14,
+                }}
+              >
+                Loading…
+              </div>
+            ) : loadError ? (
+              <p
+                style={{
+                  padding: "24px 0",
+                  fontSize: 14,
+                  color: TEXT_MUTED,
+                  margin: 0,
+                }}
+              >
+                Failed to load collaborators.
+              </p>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  maxHeight: 280,
+                  overflowY: "auto",
+                }}
+              >
+                {/* Owner row (current user) */}
+                {currentUser && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 16px",
+                      background: CARD_BG,
+                      borderRadius: 12,
+                      border: `1px solid ${CARD_BORDER}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: PURPLE,
+                        color: TEXT_WHITE,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {getInitials(currentUser.name, currentUser.email)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: TEXT_WHITE,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {currentUser.name || currentUser.email || "You"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: TEXT_MUTED,
+                          fontStyle: "italic",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Owner
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 9999,
+                        background: BADGE_BG,
+                        color: TEXT_WHITE,
+                        fontSize: 12,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Editor
+                    </span>
+                  </div>
+                )}
+
+                {/* Collaborator rows */}
+                {list.map((c) => (
+                  <div
+                    key={c.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 16px",
+                      background: CARD_BG,
+                      borderRadius: 12,
+                      border: `1px solid ${CARD_BORDER}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "rgba(120,120,140,0.5)",
+                        color: TEXT_WHITE,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {getInitials(c.name, c.email)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: TEXT_WHITE,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {c.name || c.email || c.id}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: TEXT_MUTED,
+                          fontStyle: "italic",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {c.email || permissionLabel(c.permission)}
+                      </div>
+                    </div>
+                    <select
+                      value={normalizePermission(c.permission)}
+                      onChange={(e) => {
+                        const v =
+                          e.target.value === "edit" ? "edit" : "view";
+                        handleUpdatePermission(c.id, v);
+                      }}
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: 9999,
+                        border: `1px solid ${CARD_BORDER}`,
+                        background: BADGE_BG,
+                        color: TEXT_WHITE,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        minWidth: 72,
+                      }}
+                    >
+                      {PERMISSION_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label === "View" ? "Viewer" : "Editor"}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(c.id)}
+                      aria-label="Remove collaborator"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        padding: 0,
+                        borderRadius: "50%",
+                        border: "none",
+                        background: "rgba(255,255,255,0.15)",
+                        color: TEXT_WHITE,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 18,
+                        lineHeight: 1,
+                      }}
+                    >
+                      ⊖
+                    </button>
+                  </div>
+                ))}
+
+                {!loading && !loadError && list.length === 0 && (
+                  <p
+                    style={{
+                      padding: currentUser ? "12px 0 0" : "24px 0 0",
+                      fontSize: 13,
+                      color: TEXT_MUTED,
+                      margin: 0,
+                    }}
+                  >
+                    No collaborators yet.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Footer: Close */}
+        <div
+          style={{
+            padding: "12px 24px 20px",
+            borderTop: `1px solid ${DIVIDER}`,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: "8px 16px",
+              border: "none",
+              background: "none",
+              color: TEXT_MUTED,
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
