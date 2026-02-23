@@ -16,8 +16,8 @@ function DiagramCardIcon() {
     <img
       src="/dbdesigner.png"
       alt=""
-      width={28}
-      height={28}
+      width={20}
+      height={20}
       style={{ objectFit: "contain" }}
     />
   );
