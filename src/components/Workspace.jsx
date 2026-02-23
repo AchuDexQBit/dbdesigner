@@ -642,7 +642,7 @@ export default function WorkSpace() {
   }, [saveState, layout, save]);
 
   useEffect(() => {
-    document.title = "Editor | drawDB";
+    document.title = "DB Designer | Editor";
 
     load();
   }, [load]);

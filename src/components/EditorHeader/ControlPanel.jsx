@@ -1824,18 +1824,12 @@ export default function ControlPanel({
         style={isRtl(i18n.language) ? { direction: "rtl" } : {}}
       >
         <div className="flex justify-start items-center">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2 me-3 text-gray-300 hover:text-white no-underline text-sm font-medium"
-          >
-            ← Dashboard
-          </Link>
           <Link to="/dashboard">
             <img
               src="/logo.png"
               alt="DexQBit"
               width={32}
-              className="ms-2 h-8 w-auto object-contain"
+              className="ms-7 h-8 w-auto object-contain"
             />
           </Link>
           <div className="ms-1 mt-1">
@@ -1874,7 +1868,7 @@ export default function ControlPanel({
               )}
             </div>
             <div className="flex items-center">
-              <div className="flex justify-start text-md select-none me-2">
+              <div className="flex justify-start text-md select-none me-2 items-center gap-1">
                 {Object.keys(menu).map((category) => (
                   <Dropdown
                     key={category}

@@ -103,36 +103,6 @@ export default function TopBar() {
           gap: 16,
         }}
       >
-        <button
-          type="button"
-          onClick={() => setChangePasswordOpen(true)}
-          style={{
-            padding: 0,
-            border: "none",
-            background: "none",
-            color: TEXT_MUTED,
-            fontSize: 13,
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          Change Password
-        </button>
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            padding: 0,
-            border: "none",
-            background: "none",
-            color: TEXT_MUTED,
-            fontSize: 13,
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          Logout
-        </button>
         <div style={{ textAlign: "right" }}>
           <p
             style={{
