@@ -5,11 +5,12 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  full_name: string;
   greet_name: string;
-  active: boolean;
   designation: string;
-  created_at: string;
+  active: boolean;
+  force_password_change: boolean;
+  image_url: string | null;
 }
 
 export interface Diagram {
@@ -38,6 +39,7 @@ export interface Collaborator {
 
 const BASE = import.meta.env.VITE_DEXI_API_URL ?? "";
 const TOOLS_URL = import.meta.env.VITE_DEXI_URL ?? "https://dexi.dexqbit.com";
+const VERSION = import.meta.env.VITE_DEXI_VERSION ?? "";
 
 /** Login URL on the tools app. Use for manual redirects (e.g. after logout). */
 export function getLoginUrl(): string {
@@ -57,7 +59,10 @@ async function req<T>(
   try {
     res = await fetch(`${BASE}${path}`, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        version: VERSION,
+      },
       credentials: "include",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
@@ -89,18 +94,18 @@ async function req<T>(
 export const api = {
   // Auth
   me(): Promise<User> {
-    return req<User>("GET", "/app/authentication/me", undefined, { skip401Redirect: true });
+    return req<User>("GET", "/authentication/me", undefined, { skip401Redirect: true });
   },
 
   logout(): Promise<{ success: boolean }> {
-    return req("POST", "/app/authentication/logout");
+    return req("POST", "/authentication/logout");
   },
 
   changePassword(
     currentPassword: string,
     newPassword: string
   ): Promise<{ success: boolean }> {
-    return req("POST", "/app/authentication/change_password", {
+    return req("POST", "/authentication/change_password", {
       currentPassword,
       newPassword,
     });
@@ -108,18 +113,18 @@ export const api = {
 
   // Diagrams
   listDiagrams(): Promise<{ owned: Diagram[]; shared: SharedDiagram[] }> {
-    return req("GET", "/app/dbdesigner/diagrams");
+    return req("GET", "/dbdesigner/diagrams");
   },
 
   createDiagram(
     name: string,
     data: object
   ): Promise<Diagram> {
-    return req("POST", "/app/dbdesigner/diagrams", { name, data });
+    return req("POST", "/dbdesigner/diagrams", { name, data });
   },
 
   getDiagram(id: string): Promise<Diagram> {
-    return req("GET", `/app/dbdesigner/diagrams/${id}`);
+    return req("GET", `/dbdesigner/diagrams/${id}`);
   },
 
   saveDiagram(
@@ -127,16 +132,16 @@ export const api = {
     name: string,
     data: object
   ): Promise<Diagram> {
-    return req("PUT", `/app/dbdesigner/diagrams/${id}`, { name, data });
+    return req("POST", `/dbdesigner/diagrams/${id}`, { name, data });
   },
 
   deleteDiagram(id: string): Promise<{ success: boolean }> {
-    return req("DELETE", `/app/dbdesigner/diagrams/${id}`);
+    return req("POST", `/dbdesigner/diagrams/${id}`);
   },
 
   // Collaborators (owner only — API enforces)
   listCollaborators(id: string): Promise<Collaborator[]> {
-    return req("GET", `/app/dbdesigner/diagrams/${id}/collaborators`);
+    return req("GET", `/dbdesigner/diagrams/${id}/collaborators`);
   },
 
   addCollaborator(
@@ -144,7 +149,7 @@ export const api = {
     email: string,
     permission: string
   ): Promise<{ user: User; permission: string }> {
-    return req("POST", `/app/dbdesigner/diagrams/${id}/collaborators`, {
+    return req("POST", `/dbdesigner/diagrams/${id}/collaborators`, {
       email,
       permission,
     });
@@ -155,7 +160,7 @@ export const api = {
     employeeId: string,
     permission: string
   ): Promise<{ success: boolean }> {
-    return req("PATCH", `/app/dbdesigner/diagrams/${id}/collaborators/${employeeId}`, {
+    return req("POST", `/dbdesigner/diagrams/${id}/collaborators/${employeeId}`, {
       permission,
     });
   },
@@ -164,6 +169,6 @@ export const api = {
     id: string,
     employeeId: string
   ): Promise<{ success: boolean }> {
-    return req("DELETE", `/app/dbdesigner/diagrams/${id}/collaborators/${employeeId}`);
+    return req("POST", `/dbdesigner/diagrams/${id}/collaborators/${employeeId}`);
   },
 };

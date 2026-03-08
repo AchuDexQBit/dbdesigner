@@ -5,11 +5,12 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 export interface User {
   id: string;
   email: string;
-  name: string;
+  full_name: string;
   greet_name: string;
-  active: boolean;
   designation: string;
-  created_at: string;
+  active: boolean;
+  force_password_change: boolean;
+  image_url: string | null;
 }
 
 export interface UserContextValue {

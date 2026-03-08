@@ -30,6 +30,7 @@
   html,
   body {
     @apply h-full min-h-full;
+    --font-audiowide: "Audiowide", system-ui, sans-serif;
   }
   #root {
     @apply h-full min-h-full;

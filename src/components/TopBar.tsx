@@ -1,16 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React from "react";
 import { useUser } from "../context/UserContext";
 import { api } from "../api/client";
-import ChangePasswordModal from "./ChangePasswordModal";
-
-// Match tools dashboard: border-white/10, purple accent #7c3aed for title, avatar #9A70DD, divider #4A2E70/80
-const BAR_BORDER = "rgba(255,255,255,0.1)";
-const TEXT_WHITE = "#ffffff";
-const TITLE_PURPLE = "#7c3aed";
-const PURPLE = "#9A70DD";
-const PURPLE_BORDER = "rgba(154,112,221,0.3)";
-const SEPARATOR = "rgba(74,46,112,0.8)";
+import { getLoginUrl } from "../api/client";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -20,30 +11,17 @@ function getInitials(name: string): string {
   return name.trim().slice(0, 2).toUpperCase() || "?";
 }
 
-function getLoginRedirectUrl(): string {
-  const base = (import.meta.env.VITE_DEXI_URL ?? "").replace(/\/$/, "");
-  return base ? `${base}/login` : "/login";
-}
-
-const TEXT_MUTED = "rgba(255,255,255,0.6)";
-
 export default function TopBar() {
   const { user } = useUser();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const isEditor = location.pathname.startsWith("/editor/");
 
-  if (!user) return null;
-
-  const displayName = user.name?.trim() || user.email || "User";
-  const initials = getInitials(displayName);
-  const designation = user.designation?.trim() ?? "";
+  const full_name = user?.full_name?.trim() || user?.email || "User";
+  const initials = user ? getInitials(full_name) : "…";
+  const designation = user?.designation?.trim() ?? "";
 
   const handleLogout = async () => {
     try {
       await api.logout();
-      window.location.href = getLoginRedirectUrl();
+      window.location.href = getLoginUrl();
     } catch (e) {
       console.error("[TopBar] Logout failed", e);
     }
@@ -51,106 +29,119 @@ export default function TopBar() {
 
   return (
     <header
-      className="topbar-header"
       style={{
-        width: "100%",
-        flexShrink: 0,
+        position: "relative",
+        zIndex: 10,
         display: "flex",
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: `1px solid ${BAR_BORDER}`,
-        paddingTop: 16,
-        paddingBottom: 16,
+        width: "100%",
+        flexShrink: 0,
+        borderBottom: "1px solid rgba(255,255,255,0.1)",
+        padding: "16px 24px",
+        background: "rgba(15,10,26,0.85)",
+        minHeight: 56,
         boxSizing: "border-box",
-        fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
       }}
+      className="px-6 py-4 md:px-8"
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        {isEditor && (
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard")}
-            style={{
-              padding: 0,
-              border: "none",
-              background: "none",
-              color: TEXT_MUTED,
-              fontSize: 14,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            ← Dashboard
-          </button>
-        )}
-        <p
-          style={{
-            margin: 0,
-            fontSize: 22,
-            fontWeight: 400,
-            color: TITLE_PURPLE,
-            fontFamily: "'Audiowide', system-ui, sans-serif",
-          }}
-        >
-          DexQBit DB Designer
-        </p>
-      </div>
+      {/* Left — title */}
+      <p
+        style={{
+          margin: 0,
+          fontSize: 22,
+          fontWeight: 400,
+          color: "#7c3aed",
+          fontFamily: "'Audiowide', system-ui, sans-serif",
+        }}
+      >
+        Dexi - DB Designer
+      </p>
 
+      {/* Right — user block */}
       <div
         style={{
           display: "flex",
+          flexDirection: "row",
           alignItems: "center",
-          gap: 16,
+          gap: 12,
         }}
       >
+        {/* User name + designation (hidden on small screens) */}
         <div style={{ textAlign: "right" }}>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 16,
-              fontWeight: 600,
-              color: TEXT_WHITE,
-            }}
-          >
-            {displayName}
+          <p style={{ margin: 0, fontWeight: 600, color: "#ffffff", fontSize: 16 }}>
+            {full_name}
           </p>
           {designation ? (
-            <p
-              style={{
-                margin: "2px 0 0 0",
-                fontSize: 14,
-                color: PURPLE,
-              }}
-            >
+            <p style={{ margin: "2px 0 0 0", fontSize: 14, color: "#9A70DD" }}>
               {designation}
             </p>
           ) : null}
         </div>
+
+        {/* Avatar (initials) */}
         <div
           style={{
             width: 40,
             height: 40,
+            flexShrink: 0,
             borderRadius: "50%",
-            border: `2px solid ${PURPLE_BORDER}`,
-            background: PURPLE,
-            color: TEXT_WHITE,
+            border: "2px solid rgba(154,112,221,0.3)",
+            background: "#9A70DD",
+            color: "#ffffff",
+            fontSize: 14,
+            fontWeight: 600,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 14,
-            fontWeight: 600,
-            flexShrink: 0,
           }}
           aria-hidden
         >
           {initials}
         </div>
-      </div>
 
-      <ChangePasswordModal
-        isOpen={changePasswordOpen}
-        onClose={() => setChangePasswordOpen(false)}
-      />
+        {/* Vertical divider */}
+        <div
+          style={{
+            width: 1,
+            height: 32,
+            flexShrink: 0,
+            background: "rgba(74,46,112,0.8)",
+          }}
+          aria-hidden
+        />
+
+        {/* Logout */}
+        <button
+          type="button"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 8px",
+            borderRadius: 6,
+            border: "none",
+            background: "transparent",
+            color: "#94a3b8",
+            fontSize: 14,
+            fontWeight: 400,
+            cursor: "pointer",
+          }}
+          className="hover:bg-white/5 hover:text-[#b3b3b3]"
+          aria-label="Log out"
+          onClick={handleLogout}
+        >
+          <img
+            src="/logout.png"
+            alt=""
+            width={20}
+            height={20}
+            style={{ opacity: 0.9 }}
+          />
+          <span>Logout</span>
+        </button>
+      </div>
     </header>
   );
 }
