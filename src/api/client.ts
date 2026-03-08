@@ -37,16 +37,15 @@ export interface Collaborator {
 // ─── Base setup ───────────────────────────────────────────────────────────
 
 const BASE = import.meta.env.VITE_DEXI_API_URL ?? "";
-
-const TOOLS_URL =
-  import.meta.env.VITE_DEXI_URL ?? "https://tools.dexqbit.com";
+const TOOLS_URL = import.meta.env.VITE_DEXI_URL ?? "https://dexi.dexqbit.com";
 
 /** Login URL on the tools app. Use for manual redirects (e.g. after logout). */
 export function getLoginUrl(): string {
-  return `${TOOLS_URL}`;
+  return `${TOOLS_URL}/login`;
 }
 
 // ─── Request helper (internal) ─────────────────────────────────────────────
+// Response shape: { status, message, data } — status 0 = success, 1 = failed, 2 = unauthorised
 
 async function req<T>(
   method: string,
@@ -66,22 +65,23 @@ async function req<T>(
     throw new Error("Service unavailable");
   }
 
-  if (res.status === 401) {
+  const response = await res.json().catch(() => ({ status: 1, message: "Invalid response", data: null }));
+
+  // status 2 = unauthorised
+  if (response.status === 2) {
     if (!options?.skip401Redirect) {
-      window.location.href = `${TOOLS_URL}`;
+      window.location.href = `${TOOLS_URL}/login`;
     }
     throw new Error("Not authenticated");
   }
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    const message = typeof data?.error === "string" ? data.error : "Request failed";
-    const err = new Error(message) as Error & { status?: number };
-    err.status = res.status;
-    throw err;
+  // status 1 = failed
+  if (response.status === 1) {
+    throw new Error(response.message ?? "Request failed");
   }
 
-  return res.json();
+  // status 0 = success
+  return response.data as T;
 }
 
 // ─── API (single export) ──────────────────────────────────────────────────
@@ -89,18 +89,18 @@ async function req<T>(
 export const api = {
   // Auth
   me(): Promise<User> {
-    return req<User>("GET", "/auth/me", undefined, { skip401Redirect: true });
+    return req<User>("GET", "/app/authentication/me", undefined, { skip401Redirect: true });
   },
 
   logout(): Promise<{ success: boolean }> {
-    return req("POST", "/auth/logout");
+    return req("POST", "/app/authentication/logout");
   },
 
   changePassword(
     currentPassword: string,
     newPassword: string
   ): Promise<{ success: boolean }> {
-    return req("POST", "/auth/change-password", {
+    return req("POST", "/app/authentication/change_password", {
       currentPassword,
       newPassword,
     });
@@ -108,18 +108,18 @@ export const api = {
 
   // Diagrams
   listDiagrams(): Promise<{ owned: Diagram[]; shared: SharedDiagram[] }> {
-    return req("GET", "/dbdesigner/diagrams");
+    return req("GET", "/app/dbdesigner/diagrams");
   },
 
   createDiagram(
     name: string,
     data: object
   ): Promise<Diagram> {
-    return req("POST", "/dbdesigner/diagrams", { name, data });
+    return req("POST", "/app/dbdesigner/diagrams", { name, data });
   },
 
   getDiagram(id: string): Promise<Diagram> {
-    return req("GET", `/dbdesigner/diagrams/${id}`);
+    return req("GET", `/app/dbdesigner/diagrams/${id}`);
   },
 
   saveDiagram(
@@ -127,16 +127,16 @@ export const api = {
     name: string,
     data: object
   ): Promise<Diagram> {
-    return req("PUT", `/dbdesigner/diagrams/${id}`, { name, data });
+    return req("PUT", `/app/dbdesigner/diagrams/${id}`, { name, data });
   },
 
   deleteDiagram(id: string): Promise<{ success: boolean }> {
-    return req("DELETE", `/dbdesigner/diagrams/${id}`);
+    return req("DELETE", `/app/dbdesigner/diagrams/${id}`);
   },
 
   // Collaborators (owner only — API enforces)
   listCollaborators(id: string): Promise<Collaborator[]> {
-    return req("GET", `/dbdesigner/diagrams/${id}/collaborators`);
+    return req("GET", `/app/dbdesigner/diagrams/${id}/collaborators`);
   },
 
   addCollaborator(
@@ -144,7 +144,7 @@ export const api = {
     email: string,
     permission: string
   ): Promise<{ user: User; permission: string }> {
-    return req("POST", `/dbdesigner/diagrams/${id}/collaborators`, {
+    return req("POST", `/app/dbdesigner/diagrams/${id}/collaborators`, {
       email,
       permission,
     });
@@ -152,18 +152,18 @@ export const api = {
 
   updateCollaborator(
     id: string,
-    userId: string,
+    employeeId: string,
     permission: string
   ): Promise<{ success: boolean }> {
-    return req("PATCH", `/dbdesigner/diagrams/${id}/collaborators/${userId}`, {
+    return req("PATCH", `/app/dbdesigner/diagrams/${id}/collaborators/${employeeId}`, {
       permission,
     });
   },
 
   removeCollaborator(
     id: string,
-    userId: string
+    employeeId: string
   ): Promise<{ success: boolean }> {
-    return req("DELETE", `/dbdesigner/diagrams/${id}/collaborators/${userId}`);
+    return req("DELETE", `/app/dbdesigner/diagrams/${id}/collaborators/${employeeId}`);
   },
 };
