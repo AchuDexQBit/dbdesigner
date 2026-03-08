@@ -67,18 +67,22 @@ export default function CollaboratorModal({
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = async (silent = false) => {
     if (!diagramId) return;
-    setLoading(true);
-    setLoadError(false);
+    if (!silent) {
+      setLoading(true);
+      setLoadError(false);
+    }
     try {
       const data = await api.listCollaborators(diagramId);
       setList(Array.isArray(data) ? data : []);
     } catch {
-      setList([]);
-      setLoadError(true);
+      if (!silent) {
+        setList([]);
+        setLoadError(true);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -92,21 +96,9 @@ export default function CollaboratorModal({
     setAdding(true);
     setAddError(null);
     try {
-      const res = await api.addCollaborator(diagramId, email, addPermission);
-      const user = res?.user;
-      if (user) {
-        setList((prev) => [
-          ...prev,
-          {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            permission: addPermission,
-            added_at: new Date().toISOString(),
-          },
-        ]);
-      }
+      await api.addCollaborator(diagramId, email, addPermission);
       setAddEmail("");
+      await load(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       const is404 =
