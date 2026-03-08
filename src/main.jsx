@@ -7,7 +7,7 @@ import App from './App.jsx';
 import './index.css';
 import './i18n/i18n.js';
 
-const requiredEnvVars = ['VITE_API_URL', 'VITE_TOOLS_URL'];
+const requiredEnvVars = ['VITE_DEXI_API_URL', 'VITE_DEXI_URL'];
 requiredEnvVars.forEach((key) => {
   if (!import.meta.env[key]) {
     console.error(`[drawdb] Missing required env var: ${key}`);

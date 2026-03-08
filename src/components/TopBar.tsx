@@ -21,7 +21,7 @@ function getInitials(name: string): string {
 }
 
 function getLoginRedirectUrl(): string {
-  const base = (import.meta.env.VITE_TOOLS_URL ?? "").replace(/\/$/, "");
+  const base = (import.meta.env.VITE_DEXI_URL ?? "").replace(/\/$/, "");
   return base ? `${base}/login` : "/login";
 }
 

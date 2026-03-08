@@ -3,14 +3,14 @@ import { api } from "../api/client";
 import { useUser } from "../context/UserContext";
 import { Spin } from "@douyinfe/semi-ui";
 
-const TOOLS_URL = import.meta.env.VITE_TOOLS_URL;
+const TOOLS_URL = import.meta.env.VITE_DEXI_URL;
 const LOGIN_PATH = "";
 
 function getLoginRedirectUrl(): string {
   const base = TOOLS_URL ?? window.location.origin;
   if (!TOOLS_URL) {
     console.error(
-      "VITE_TOOLS_URL is not set; falling back to window.location.origin for auth redirect"
+      "VITE_DEXI_URL is not set; falling back to window.location.origin for auth redirect"
     );
   }
   return `${base}${LOGIN_PATH}`;

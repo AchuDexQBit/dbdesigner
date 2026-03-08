@@ -36,10 +36,10 @@ export interface Collaborator {
 
 // ─── Base setup ───────────────────────────────────────────────────────────
 
-const BASE = import.meta.env.VITE_API_URL ?? "";
+const BASE = import.meta.env.VITE_DEXI_API_URL ?? "";
 
 const TOOLS_URL =
-  import.meta.env.VITE_TOOLS_URL ?? "https://tools.dexqbit.com";
+  import.meta.env.VITE_DEXI_URL ?? "https://tools.dexqbit.com";
 
 /** Login URL on the tools app. Use for manual redirects (e.g. after logout). */
 export function getLoginUrl(): string {
