@@ -1,7 +1,5 @@
 import React from "react";
 import { useUser } from "../context/UserContext";
-import { api } from "../api/client";
-import { getLoginUrl } from "../api/client";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -18,15 +16,6 @@ export default function TopBar() {
   const initials = user ? getInitials(full_name) : "…";
   const designation = user?.designation?.trim() ?? "";
 
-  const handleLogout = async () => {
-    try {
-      await api.logout();
-      window.location.href = getLoginUrl();
-    } catch (e) {
-      console.error("[TopBar] Logout failed", e);
-    }
-  };
-
   return (
     <header
       style={{
@@ -40,7 +29,7 @@ export default function TopBar() {
         flexShrink: 0,
         borderBottom: "1px solid rgba(255,255,255,0.1)",
         padding: "16px 24px",
-        background: "rgba(15,10,26,0.85)",
+        background: "transparent",
         minHeight: 56,
         boxSizing: "border-box",
       }}
@@ -100,47 +89,6 @@ export default function TopBar() {
         >
           {initials}
         </div>
-
-        {/* Vertical divider */}
-        <div
-          style={{
-            width: 1,
-            height: 32,
-            flexShrink: 0,
-            background: "rgba(74,46,112,0.8)",
-          }}
-          aria-hidden
-        />
-
-        {/* Logout */}
-        <button
-          type="button"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "6px 8px",
-            borderRadius: 6,
-            border: "none",
-            background: "transparent",
-            color: "#94a3b8",
-            fontSize: 14,
-            fontWeight: 400,
-            cursor: "pointer",
-          }}
-          className="hover:bg-white/5 hover:text-[#b3b3b3]"
-          aria-label="Log out"
-          onClick={handleLogout}
-        >
-          <img
-            src="/logout.png"
-            alt=""
-            width={20}
-            height={20}
-            style={{ opacity: 0.9 }}
-          />
-          <span>Logout</span>
-        </button>
       </div>
     </header>
   );
