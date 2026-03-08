@@ -39,7 +39,7 @@ export default function TopBar() {
       <p
         style={{
           margin: 0,
-          fontSize: 22,
+          fontSize: "22px",
           fontWeight: 400,
           color: "#7c3aed",
           fontFamily: "'Audiowide', system-ui, sans-serif",

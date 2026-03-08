@@ -132,11 +132,11 @@ export const api = {
     name: string,
     data: object
   ): Promise<Diagram> {
-    return req("POST", `/dbdesigner/diagrams/${id}`, { name, data });
+    return req("POST", `/dbdesigner/diagrams/${id}/save`, { name, data });
   },
 
   deleteDiagram(id: string): Promise<{ success: boolean }> {
-    return req("POST", `/dbdesigner/diagrams/${id}`);
+    return req("POST", `/dbdesigner/diagrams/${id}/delete`);
   },
 
   // Collaborators (owner only — API enforces)
@@ -160,7 +160,7 @@ export const api = {
     employeeId: string,
     permission: string
   ): Promise<{ success: boolean }> {
-    return req("POST", `/dbdesigner/diagrams/${id}/collaborators/${employeeId}`, {
+    return req("POST", `/dbdesigner/diagrams/${id}/collaborators/${employeeId}/update`, {
       permission,
     });
   },
@@ -169,6 +169,6 @@ export const api = {
     id: string,
     employeeId: string
   ): Promise<{ success: boolean }> {
-    return req("POST", `/dbdesigner/diagrams/${id}/collaborators/${employeeId}`);
+    return req("POST", `/dbdesigner/diagrams/${id}/collaborators/${employeeId}/remove`);
   },
 };
