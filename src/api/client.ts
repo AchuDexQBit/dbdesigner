@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import { getApiBaseUrl } from "../utils/apiBase";
+
 // ─── Types (exported for consumers; User matches AuthUser from tools) ───────
 
 export interface User {
@@ -37,13 +39,12 @@ export interface Collaborator {
 
 // ─── Base setup ───────────────────────────────────────────────────────────
 
-const BASE = import.meta.env.VITE_DEXI_API_URL ?? "";
-const TOOLS_URL = import.meta.env.VITE_DEXI_URL ?? "https://dexi.dexqbit.com";
-const VERSION = import.meta.env.VITE_DEXI_VERSION ?? "";
+const BASE = getApiBaseUrl();
+const VERSION = import.meta.env.VITE_API_VERSION ?? "";
 
-/** Login URL on the tools app. Use for manual redirects (e.g. after logout). */
+/** Login URL (same API host). Use for manual redirects (e.g. after logout). */
 export function getLoginUrl(): string {
-  return `${TOOLS_URL}/login`;
+  return `${BASE}/login`;
 }
 
 // ─── Request helper (internal) ─────────────────────────────────────────────
@@ -75,7 +76,7 @@ async function req<T>(
   // status 2 = unauthorised
   if (response.status === 2) {
     if (!options?.skip401Redirect) {
-      window.location.href = `${TOOLS_URL}/login`;
+      window.location.href = `${BASE}/login`;
     }
     throw new Error("Not authenticated");
   }

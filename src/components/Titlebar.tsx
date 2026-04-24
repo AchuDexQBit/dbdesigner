@@ -38,9 +38,9 @@ export default function Titlebar() {
 
   if (!user) return null;
 
-  const displayName = user.name?.trim() || user.email || "User";
-  const greetingName = user.name?.trim()?.split(/\s+/)[0] || displayName;
-  const initials = getInitials(user.name ?? "", user.email ?? "");
+  const displayName = user.full_name?.trim() || user.email || "User";
+  const greetingName = user.full_name?.trim()?.split(/\s+/)[0] || displayName;
+  const initials = getInitials(user.full_name ?? "", user.email ?? "");
   const subtitle = user.email ?? "";
 
   const handleLogout = async () => {

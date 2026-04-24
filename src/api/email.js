@@ -1,7 +1,8 @@
 import axios from "axios";
+import { getApiBaseUrl } from "../utils/apiBase";
 
 export async function send(subject, message, attachments) {
-  return await axios.post(`${import.meta.env.VITE_BACKEND_URL}/email/send`, {
+  return await axios.post(`${getApiBaseUrl()}/email/send`, {
     subject,
     message,
     attachments,

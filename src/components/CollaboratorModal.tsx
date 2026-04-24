@@ -411,7 +411,7 @@ export default function CollaboratorModal({
                         flexShrink: 0,
                       }}
                     >
-                      {getInitials(currentUser.name, currentUser.email)}
+                      {getInitials(currentUser.full_name, currentUser.email)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
@@ -424,7 +424,7 @@ export default function CollaboratorModal({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {currentUser.name || currentUser.email || "You"}
+                        {currentUser.full_name || currentUser.email || "You"}
                       </div>
                       <div
                         style={{

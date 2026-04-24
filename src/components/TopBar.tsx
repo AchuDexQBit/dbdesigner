@@ -1,5 +1,6 @@
 import React from "react";
 import { useUser } from "../context/UserContext";
+import { getCookie } from "../utils/cookie";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -12,8 +13,15 @@ function getInitials(name: string): string {
 export default function TopBar() {
   const { user } = useUser();
 
-  const full_name = user?.full_name?.trim() || user?.email || "User";
-  const initials = user ? getInitials(full_name) : "…";
+  const fromCookie = getCookie("full_name") ?? "";
+  const displayName =
+    user?.full_name?.trim() ||
+    fromCookie ||
+    user?.email?.trim() ||
+    "User";
+  const initialsSource =
+    user?.full_name?.trim() || fromCookie || user?.email?.trim() || "";
+  const initials = initialsSource ? getInitials(initialsSource) : "…";
   const designation = user?.designation?.trim() ?? "";
 
   return (
@@ -60,7 +68,7 @@ export default function TopBar() {
         {/* User name + designation (hidden on small screens) */}
         <div style={{ textAlign: "right" }}>
           <p style={{ margin: 0, fontWeight: 600, color: "#ffffff", fontSize: 16 }}>
-            {full_name}
+            {displayName}
           </p>
           {designation ? (
             <p style={{ margin: "2px 0 0 0", fontSize: 14, color: "#9A70DD" }}>

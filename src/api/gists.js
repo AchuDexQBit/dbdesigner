@@ -1,10 +1,11 @@
 import axios from "axios";
+import { getApiBaseUrl } from "../utils/apiBase";
 
 export const SHARE_FILENAME = "share.json";
 export const VERSION_FILENAME = "versionned.json";
 
 const description = "DB Designer";
-const baseUrl = import.meta.env.VITE_BACKEND_URL;
+const baseUrl = getApiBaseUrl();
 
 export async function create(filename, content) {
   const res = await axios.post(`${baseUrl}/gists`, {
