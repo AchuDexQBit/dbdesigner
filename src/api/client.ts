@@ -40,32 +40,35 @@ export interface Collaborator {
 // ─── Base setup ───────────────────────────────────────────────────────────
 
 const BASE = getApiBaseUrl();
-const VERSION = import.meta.env.VITE_API_VERSION ?? "";
+const VERSION = (import.meta.env.VITE_API_VERSION ?? "").trim();
 
-/** Login URL (same API host). Use for manual redirects (e.g. after logout). */
-export function getLoginUrl(): string {
-  return `${BASE}/login`;
+function buildReqHeaders(method: string, hasBody: boolean): HeadersInit {
+  const headers: Record<string, string> = {};
+  // GET/HEAD without a body: omit Content-Type + custom headers when no version
+  // so the request can be a "simple" cross-origin request (no OPTIONS preflight).
+  const simpleRead =
+    (method === "GET" || method === "HEAD") && !hasBody && !VERSION;
+  if (!simpleRead) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (VERSION) {
+    headers.version = VERSION;
+  }
+  return headers;
 }
 
 // ─── Request helper (internal) ─────────────────────────────────────────────
 // Response shape: { status, message, data } — status 0 = success, 1 = failed, 2 = unauthorised
 
-async function req<T>(
-  method: string,
-  path: string,
-  body?: unknown,
-  options?: { skip401Redirect?: boolean }
-): Promise<T> {
+async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const hasBody = body !== undefined;
   let res: Response;
   try {
     res = await fetch(`${BASE}${path}`, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        version: VERSION,
-      },
+      headers: buildReqHeaders(method, hasBody),
       credentials: "include",
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: hasBody ? JSON.stringify(body) : undefined,
     });
   } catch {
     throw new Error("Service unavailable");
@@ -75,9 +78,7 @@ async function req<T>(
 
   // status 2 = unauthorised
   if (response.status === 2) {
-    if (!options?.skip401Redirect) {
-      window.location.href = `${BASE}/login`;
-    }
+    window.location.href = `${BASE}/login`;
     throw new Error("Not authenticated");
   }
 
@@ -93,25 +94,6 @@ async function req<T>(
 // ─── API (single export) ──────────────────────────────────────────────────
 
 export const api = {
-  // Auth
-  me(): Promise<User> {
-    return req<User>("GET", "/authentication/me", undefined, { skip401Redirect: true });
-  },
-
-  logout(): Promise<{ success: boolean }> {
-    return req("POST", "/authentication/logout");
-  },
-
-  changePassword(
-    currentPassword: string,
-    newPassword: string
-  ): Promise<{ success: boolean }> {
-    return req("POST", "/authentication/change_password", {
-      currentPassword,
-      newPassword,
-    });
-  },
-
   // Diagrams
   listDiagrams(): Promise<{ owned: Diagram[]; shared: SharedDiagram[] }> {
     return req("GET", "/dbdesigner/diagrams");

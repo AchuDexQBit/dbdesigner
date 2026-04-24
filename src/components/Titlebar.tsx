@@ -1,6 +1,5 @@
 import React from "react";
 import { useUser } from "../context/UserContext";
-import { api, getLoginUrl } from "../api/client";
 
 const BAR_BG = "#12111a";
 const BORDER = "rgba(255,255,255,0.1)";
@@ -23,16 +22,6 @@ function getInitials(name: string, email: string): string {
   return "?";
 }
 
-function LogoutIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
-
 export default function Titlebar() {
   const { user } = useUser();
 
@@ -42,14 +31,6 @@ export default function Titlebar() {
   const greetingName = user.full_name?.trim()?.split(/\s+/)[0] || displayName;
   const initials = getInitials(user.full_name ?? "", user.email ?? "");
   const subtitle = user.email ?? "";
-
-  const handleLogout = async () => {
-    try {
-      await api.logout();
-    } finally {
-      window.location.href = getLoginUrl();
-    }
-  };
 
   return (
     <header
@@ -127,37 +108,6 @@ export default function Titlebar() {
             {initials}
           </div>
         </div>
-
-        <div
-          style={{
-            width: 1,
-            height: 24,
-            background: BORDER,
-            flexShrink: 0,
-          }}
-        />
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 0",
-            border: "none",
-            background: "none",
-            color: TEXT_MUTED,
-            fontSize: 13,
-            fontWeight: 400,
-            cursor: "pointer",
-            fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-          }}
-          className="titlebar-logout-btn"
-        >
-          <LogoutIcon />
-          <span>Logout</span>
-        </button>
       </div>
     </header>
   );
