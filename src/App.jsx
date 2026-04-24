@@ -3,7 +3,6 @@ import { useLayoutEffect } from "react";
 import Editor from "./pages/Editor";
 import Dashboard from "./pages/Dashboard";
 import SettingsContextProvider from "./context/SettingsContext";
-import { AuthGuard } from "./components/AuthGuard";
 
 export default function App() {
   return (
@@ -11,22 +10,8 @@ export default function App() {
       <RestoreScroll />
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route
-          path="/dashboard"
-          element={
-            <AuthGuard>
-              <Dashboard />
-            </AuthGuard>
-          }
-        />
-        <Route
-          path="/editor/:id"
-          element={
-            <AuthGuard>
-              <Editor />
-            </AuthGuard>
-          }
-        />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/editor/:id" element={<Editor />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </SettingsContextProvider>
