@@ -1,3 +1,7 @@
+/// <reference types="vite/client" />
+
+import { getCookie } from "./cookie";
+
 /**
  * Base URL for API calls.
  *
@@ -53,19 +57,36 @@ function dexiVersion(): string {
   return (import.meta.env.VITE_DEXI_VERSION ?? "").trim();
 }
 
+/** Cookies → API headers (same for fetch + axios). */
+function identityHeadersFromCookies(): Record<string, string> {
+  const out: Record<string, string> = {};
+  const email = getCookie("user_id");
+  if (email?.trim()) {
+    out["x-employee-email"] = email.trim();
+  }
+  const userId = getCookie("user_id");
+  if (userId?.trim()) {
+    out["user_id"] = userId.trim();
+  }
+  return out;
+}
+
 /**
  * Headers for API calls: same rules as `fetch` in `client.ts`.
- * GET/HEAD with no body and empty `VITE_DEXI_VERSION` → no `Content-Type`, no `version`
- * (browser “simple” request, no OPTIONS preflight).
+ * GET/HEAD with no body: only “simple” when there is no `version` and no identity
+ * cookies (no custom headers → no OPTIONS preflight).
  */
 export function buildApiHeaders(
   method: string,
   hasBody: boolean,
 ): Record<string, string> {
   const v = dexiVersion();
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...identityHeadersFromCookies() };
   const simpleRead =
-    (method === "GET" || method === "HEAD") && !hasBody && !v;
+    (method === "GET" || method === "HEAD") &&
+    !hasBody &&
+    !v &&
+    Object.keys(headers).length === 0;
   if (!simpleRead) {
     headers["Content-Type"] = "application/json";
   }
