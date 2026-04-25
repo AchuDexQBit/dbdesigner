@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import { getApiBaseUrl } from "../utils/apiBase";
+import { getApiBaseUrl, buildApiHeaders } from "../utils/apiBase";
 
 // ─── Types (exported for consumers; User matches AuthUser from tools) ───────
 
@@ -37,36 +37,17 @@ export interface Collaborator {
   added_at: string;
 }
 
-// ─── Base setup ───────────────────────────────────────────────────────────
-
-const BASE = getApiBaseUrl();
-const VERSION = (import.meta.env.VITE_API_VERSION ?? "").trim();
-
-function buildReqHeaders(method: string, hasBody: boolean): HeadersInit {
-  const headers: Record<string, string> = {};
-  // GET/HEAD without a body: omit Content-Type + custom headers when no version
-  // so the request can be a "simple" cross-origin request (no OPTIONS preflight).
-  const simpleRead =
-    (method === "GET" || method === "HEAD") && !hasBody && !VERSION;
-  if (!simpleRead) {
-    headers["Content-Type"] = "application/json";
-  }
-  if (VERSION) {
-    headers.version = VERSION;
-  }
-  return headers;
-}
-
 // ─── Request helper (internal) ─────────────────────────────────────────────
 // Response shape: { status, message, data } — status 0 = success, 1 = failed, 2 = unauthorised
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const base = getApiBaseUrl();
   const hasBody = body !== undefined;
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, {
+    res = await fetch(`${base}${path}`, {
       method,
-      headers: buildReqHeaders(method, hasBody),
+      headers: buildApiHeaders(method, hasBody),
       credentials: "include",
       body: hasBody ? JSON.stringify(body) : undefined,
     });
@@ -78,7 +59,7 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
 
   // status 2 = unauthorised
   if (response.status === 2) {
-    window.location.href = `${BASE}/login`;
+    window.location.href = `${getApiBaseUrl()}/login`;
     throw new Error("Not authenticated");
   }
 

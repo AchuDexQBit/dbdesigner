@@ -1,55 +1,73 @@
 import axios from "axios";
-import { getApiBaseUrl } from "../utils/apiBase";
+import { getApiBaseUrl, buildApiHeaders } from "../utils/apiBase";
 
 export const SHARE_FILENAME = "share.json";
 export const VERSION_FILENAME = "versionned.json";
 
 const description = "DB Designer";
-const baseUrl = getApiBaseUrl();
+
+const ax = (method, hasBody, extra = {}) => ({
+  ...extra,
+  headers: { ...buildApiHeaders(method, hasBody), ...(extra.headers || {}) },
+});
 
 export async function create(filename, content) {
-  const res = await axios.post(`${baseUrl}/gists`, {
-    public: false,
-    filename,
-    description,
-    content,
-  });
+  const res = await axios.post(
+    `${getApiBaseUrl()}/gists`,
+    {
+      public: false,
+      filename,
+      description,
+      content,
+    },
+    ax("POST", true),
+  );
 
   return res.data.data.id;
 }
 
 export async function patch(gistId, filename, content) {
-  const { data } = await axios.patch(`${baseUrl}/gists/${gistId}`, {
-    filename,
-    content,
-  });
+  const { data } = await axios.patch(
+    `${getApiBaseUrl()}/gists/${gistId}`,
+    {
+      filename,
+      content,
+    },
+    ax("PATCH", true),
+  );
 
   return data.deleted;
 }
 
 export async function del(gistId) {
-  await axios.delete(`${baseUrl}/gists/${gistId}`);
+  await axios.delete(`${getApiBaseUrl()}/gists/${gistId}`, ax("DELETE", false));
 }
 
 export async function get(gistId) {
-  const res = await axios.get(`${baseUrl}/gists/${gistId}`);
+  const res = await axios.get(`${getApiBaseUrl()}/gists/${gistId}`, ax("GET", false));
 
   return res.data;
 }
 
 export async function getCommits(gistId, perPage = 20, page = 1) {
-  const res = await axios.get(`${baseUrl}/gists/${gistId}/commits`, {
-    params: {
-      per_page: perPage,
-      page,
-    },
-  });
+  const res = await axios.get(
+    `${getApiBaseUrl()}/gists/${gistId}/commits`,
+    ax("GET", false, {
+      params: {
+        per_page: perPage,
+        page,
+      },
+    }),
+  );
 
   return res.data;
 }
 
 export async function getVersion(gistId, sha) {
-  const res = await axios.get(`${baseUrl}/gists/${gistId}/${sha}`);
+  const res = await axios.get(
+    `${getApiBaseUrl()}/gists/${gistId}/${sha}`,
+    ax("GET", false),
+  );
 
   return res.data;
 }
@@ -61,13 +79,13 @@ export async function getCommitsWithFile(
   cursor = null,
 ) {
   const res = await axios.get(
-    `${baseUrl}/gists/${gistId}/file-versions/${file}`,
-    {
+    `${getApiBaseUrl()}/gists/${gistId}/file-versions/${file}`,
+    ax("GET", false, {
       params: {
         limit,
         cursor,
       },
-    },
+    }),
   );
 
   return res.data;
@@ -75,7 +93,8 @@ export async function getCommitsWithFile(
 
 export async function compare(gistId, file, versionA, versionB) {
   const res = await axios.get(
-    `${baseUrl}/gists/${gistId}/file/${file}/compare/${versionA}/${versionB}`,
+    `${getApiBaseUrl()}/gists/${gistId}/file/${file}/compare/${versionA}/${versionB}`,
+    ax("GET", false),
   );
 
   return res.data;
