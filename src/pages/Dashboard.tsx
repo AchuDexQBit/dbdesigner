@@ -5,7 +5,7 @@ import { IconPlus } from "@douyinfe/semi-icons";
 import { api } from "../api/client";
 import type { Diagram, SharedDiagram } from "../api/client";
 import { useUser } from "../context/UserContext";
-import DiagramCard, { type DiagramCardItem } from "../components/DiagramCard";
+import DiagramCard from "../components/DiagramCard";
 import TopBar from "../components/TopBar";
 import CollaboratorModal from "../components/CollaboratorModal";
 
@@ -83,8 +83,6 @@ export default function Dashboard() {
       Toast.error("Failed to delete diagram. Try again.");
     }
   };
-
-  const isOwned = (d: DiagramCardItem) => user?.id != null && d.owner_id === user.id;
 
   return (
     <div
@@ -193,7 +191,7 @@ export default function Dashboard() {
                 <DiagramCard
                   key={d.id}
                   diagram={d}
-                  isOwned={isOwned(d)}
+                  isOwned
                   currentUserId={user?.id ?? ""}
                   onShare={handleShare}
                   onDelete={handleDelete}

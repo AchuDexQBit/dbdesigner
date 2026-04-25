@@ -77,7 +77,11 @@ export default function DiagramCard({
   onShare,
   onDelete,
 }: DiagramCardProps) {
-  const ownerLabel = isOwned ? "You" : isSharedDiagram(diagram) ? diagram.owner_name : "—";
+  const ownerLabel = isOwned
+    ? "You"
+    : isSharedDiagram(diagram)
+      ? diagram.owner_name
+      : diagram.owner_email ?? "—";
   const updatedAt = diagram.updated_at ?? "";
   const timeLabel = relativeTime(updatedAt);
 
@@ -94,7 +98,9 @@ export default function DiagramCard({
     onDelete(diagram.id);
   };
 
-  const showActions = isOwned && diagram.owner_id === currentUserId;
+  const showActions =
+    isOwned &&
+    (!diagram.owner_id || diagram.owner_id === currentUserId);
   const iconBg = isOwned ? ICON_BG_OWNED : ICON_BG_SHARED;
 
   const openShareModal = (e: React.MouseEvent) => {
